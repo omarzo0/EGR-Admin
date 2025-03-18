@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import TitleCard from "../../components/Cards/TitleCard";
 import { openModal } from "../common/modalSlice";
+import PencilIcon from "@heroicons/react/24/outline/PencilIcon";
 
 import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
 
@@ -55,6 +56,9 @@ function Leads() {
                 <td>super admin</td>
                 <td>01002020455</td>
                 <td>
+                  <button className="btn btn-square btn-ghost">
+                    <PencilIcon className="w-5" />
+                  </button>
                   <button className="btn btn-square btn-ghost">
                     <TrashIcon className="w-5" />
                   </button>

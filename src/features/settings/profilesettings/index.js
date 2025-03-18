@@ -1,51 +1,51 @@
-import moment from "moment"
-import { useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import TitleCard from "../../../components/Cards/TitleCard"
-import { showNotification } from '../../common/headerSlice'
-import InputText from '../../../components/Input/InputText'
-import TextAreaInput from '../../../components/Input/TextAreaInput'
-import ToogleInput from '../../../components/Input/ToogleInput'
+import { useState } from "react";
+import TitleCard from "../../../components/Cards/TitleCard";
+import { showNotification } from "../../common/headerSlice";
+import TextAreaInput from "../../../components/Input/TextAreaInput";
+import AccountSettings from "../components/accountSettings";
+import Notification from "../components/notification";
+import Points from "../components/points";
+import Feedback from "../components/feedback";
 
-function ProfileSettings(){
+function ProfileSettings() {
+  const [activeTab, setActiveTab] = useState("profile");
 
+  const updateFormValue = ({ updateType, value }) => {
+    console.log(updateType);
+  };
 
-    const dispatch = useDispatch()
+  return (
+    <>
+      {/* Tabs */}
+      <div className="flex border-b mb-4">
+        {["profile", "notifications", "points", "feedback"].map((tab) => (
+          <button
+            key={tab}
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === tab
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab === "profile" && "Profile Settings"}
+            {tab === "notifications" && "Notifications"}
+            {tab === "points" && "Points"}
+            {tab === "feedback" && "Feedback"}
+          </button>
+        ))}
+      </div>
 
-    // Call API to update profile settings changes
-    const updateProfile = () => {
-        dispatch(showNotification({message : "Profile Updated", status : 1}))    
-    }
+      {/* Tab Content */}
+      {activeTab === "profile" && <AccountSettings />}
 
-    const updateFormValue = ({updateType, value}) => {
-        console.log(updateType)
-    }
+      {activeTab === "notifications" && <Notification />}
 
-    return(
-        <>
-            
-            <TitleCard title="Profile Settings" topMargin="mt-2">
+      {activeTab === "points" && <Points />}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InputText labelTitle="Name" defaultValue="Alex" updateFormValue={updateFormValue}/>
-                    <InputText labelTitle="Email Id" defaultValue="alex@dashwind.com" updateFormValue={updateFormValue}/>
-                    <InputText labelTitle="Title" defaultValue="UI/UX Designer" updateFormValue={updateFormValue}/>
-                    <InputText labelTitle="Place" defaultValue="California" updateFormValue={updateFormValue}/>
-                    <TextAreaInput labelTitle="About" defaultValue="Doing what I love, part time traveller" updateFormValue={updateFormValue}/>
-                </div>
-                <div className="divider" ></div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InputText labelTitle="Language" defaultValue="English" updateFormValue={updateFormValue}/>
-                    <InputText labelTitle="Timezone" defaultValue="IST" updateFormValue={updateFormValue}/>
-                    <ToogleInput updateType="syncData" labelTitle="Sync Data" defaultValue={true} updateFormValue={updateFormValue}/>
-                </div>
-
-                <div className="mt-16"><button className="btn btn-primary float-right" onClick={() => updateProfile()}>Update</button></div>
-            </TitleCard>
-        </>
-    )
+      {activeTab === "feedback" && <Feedback />}
+    </>
+  );
 }
 
-
-export default ProfileSettings
+export default ProfileSettings;

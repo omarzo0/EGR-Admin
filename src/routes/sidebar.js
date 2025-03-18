@@ -28,61 +28,49 @@ const routes = [
     icon: <Squares2X2Icon className={iconClasses} />,
     name: "Dashboard",
   },
+
   {
     path: "/app/leads", // url
     icon: <InboxArrowDownIcon className={iconClasses} />, // icon component
     name: "Admin", // name that appear in Sidebar
   },
   {
-    path: "/app/transactions", // url
+    path: "/app/citizen", // url
     icon: <CurrencyDollarIcon className={iconClasses} />, // icon component
     name: "Citizens", // name that appear in Sidebar
   },
   {
-    path: "/app/charts", // url
+    path: "/app/department", // url
     icon: <ChartBarIcon className={iconClasses} />, // icon component
     name: "Departments & services", // name that appear in Sidebar
   },
   {
-    path: "/app/integration", // url
+    path: "/app/documents", // url
     icon: <BoltIcon className={iconClasses} />, // icon component
     name: "Documents", // name that appear in Sidebar
   },
   {
-    path: "/app/calendar", // url
+    path: "/app/digital-wallet", // url
     icon: <CalendarDaysIcon className={iconClasses} />, // icon component
     name: "Digital Wallet", // name that appear in Sidebar
   },
   {
-    path: "/app/calendar", // url
+    path: "/app/e-sign", // url
     icon: <CalendarDaysIcon className={iconClasses} />, // icon component
     name: "E-signatures", // name that appear in Sidebar
   },
-  {
-    path: "/app/settings-profile", //url
-    icon: <UserIcon className={submenuIconClasses} />, // icon component
-    name: "Profile", // name that appear in Sidebar
-  },
+
   {
     path: "/app/settings-billing",
     icon: <WalletIcon className={submenuIconClasses} />,
     name: "Billing",
   },
-  {
-    path: "/app/settings-team", // url
-    icon: <UsersIcon className={submenuIconClasses} />, // icon component
-    name: "Logs", // name that appear in Sidebar
-  },
-  {
-    path: "/app/settings-team", // url
-    icon: <UsersIcon className={submenuIconClasses} />, // icon component
-    name: "Feedbacks", // name that appear in Sidebar
-  },
-  {
-    path: "/app/settings-team", // url
-    icon: <UsersIcon className={submenuIconClasses} />, // icon component
-    name: "Notifications", // name that appear in Sidebar
-  },
+  // {
+  //   path: "/app/settings-team", // url
+  //   icon: <UsersIcon className={submenuIconClasses} />, // icon component
+  //   name: "Reminders", // name that appear in Sidebar
+  // },
+
   {
     path: "/app/settings-profile", //url
     icon: <UserIcon className={submenuIconClasses} />, // icon component
