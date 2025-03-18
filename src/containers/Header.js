@@ -75,7 +75,7 @@ function Header() {
                 </select> */}
 
           {/* Light and dark theme selection toogle **/}
-          <label className="swap ">
+          {/* <label className="swap ">
             <input type="checkbox" />
             <SunIcon
               data-set-theme="light"
@@ -93,7 +93,7 @@ function Header() {
                 (currentTheme === "light" ? "swap-on" : "swap-off")
               }
             />
-          </label>
+          </label> */}
 
           {/* Notification icon */}
           <button
