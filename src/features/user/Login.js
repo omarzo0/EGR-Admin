@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import LandingIntro from "./LandingIntro";
+import axios from "axios";
 import ErrorText from "../../components/Typography/ErrorText";
 import InputText from "../../components/Input/InputText";
-
+import { useDispatch } from "react-redux";
+import { setAuthData } from "../common/authSlice";
 function Login() {
   const INITIAL_LOGIN_OBJ = {
     password: "",
@@ -13,21 +14,53 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [loginObj, setLoginObj] = useState(INITIAL_LOGIN_OBJ);
+  const dispatch = useDispatch();
 
-  const submitForm = (e) => {
+  const submitForm = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
     if (loginObj.emailId.trim() === "")
-      return setErrorMessage("Email Id is required! (use any value)");
+      return setErrorMessage("Email is required!");
     if (loginObj.password.trim() === "")
-      return setErrorMessage("Password is required! (use any value)");
-    else {
+      return setErrorMessage("Password is required!");
+
+    try {
       setLoading(true);
-      // Call API to check user credentials and save token in localstorage
-      localStorage.setItem("token", "DumyTokenHere");
+      const response = await axios.post(
+        "http://localhost:5000/api/admin/login",
+        {
+          email: loginObj.emailId,
+          password: loginObj.password,
+        }
+      );
+
+      // Correct response structure access
+      const responseData = response.data;
+      if (responseData.status === "success") {
+        const { id, accessToken } = responseData.data;
+
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("adminId", id);
+
+        dispatch(
+          setAuthData({
+            id: id,
+            accessToken: accessToken,
+          })
+        );
+
+        console.log("Auth state after dispatching setAuthData:", setAuthData);
+
+        window.location.href = "/app/dashboard";
+      } else {
+        setErrorMessage(responseData.message || "Login failed");
+      }
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || "Login failed");
+      console.error("Login Error:", err);
+    } finally {
       setLoading(false);
-      window.location.href = "/app/dashboard";
     }
   };
 
@@ -41,14 +74,14 @@ function Login() {
       <div className="card w-full max-w-md shadow-xl">
         <div className="bg-base-100 rounded-xl p-8">
           <h2 className="text-2xl font-semibold mb-4 text-center">Login</h2>
-          <form onSubmit={(e) => submitForm(e)}>
+          <form onSubmit={submitForm}>
             <div className="mb-4">
               <InputText
                 type="emailId"
                 defaultValue={loginObj.emailId}
                 updateType="emailId"
                 containerStyle="mt-4"
-                labelTitle="National Id"
+                labelTitle="Email"
                 updateFormValue={updateFormValue}
               />
 
@@ -80,15 +113,6 @@ function Login() {
             >
               Login
             </button>
-
-            <div className="text-center mt-4">
-              Don't have an account ?{" "}
-              <Link to="/register">
-                <span className="inline-block hover:text-primary hover:underline hover:cursor-pointer transition duration-200">
-                  Register
-                </span>
-              </Link>
-            </div>
           </form>
         </div>
       </div>

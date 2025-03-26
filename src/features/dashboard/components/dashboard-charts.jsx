@@ -85,8 +85,8 @@ export function BarChart({ title, description, data }) {
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
-          <canvas ref={chartRef}></canvas>
+        <div className="h-80 w-full">
+          <canvas ref={chartRef} className="w-full h-full"></canvas>
         </div>
       </CardContent>
     </Card>
@@ -156,71 +156,8 @@ export function DoughnutChart({ title, description, data }) {
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
-          <canvas ref={chartRef}></canvas>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-export function LineChart({ title, description, data }) {
-  const chartRef = useRef(null);
-  const chartInstance = useRef(null);
-
-  useEffect(() => {
-    if (chartRef.current) {
-      // Destroy existing chart if it exists
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-
-      const ctx = chartRef.current.getContext("2d");
-
-      chartInstance.current = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: data.labels,
-          datasets: data.datasets.map((dataset) => ({
-            label: dataset.label,
-            data: dataset.values,
-            borderColor: dataset.color,
-            backgroundColor: `${dataset.color}33`,
-            tension: 0.3,
-            fill: true,
-          })),
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                precision: 0,
-              },
-            },
-          },
-        },
-      });
-    }
-
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-    };
-  }, [data]);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="h-80">
-          <canvas ref={chartRef}></canvas>
+        <div className="h-80 w-full">
+          <canvas ref={chartRef} className="w-full h-full"></canvas>
         </div>
       </CardContent>
     </Card>

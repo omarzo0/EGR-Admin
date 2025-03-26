@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { Button } from "../../lib/ui/button";
@@ -23,64 +24,16 @@ import {
   useDisclosure,
 } from "@nextui-org/react";
 import { Label } from "../../lib/ui/label";
+import { showNotification } from "../common/headerSlice";
 
 export default function DepartmentsPage() {
-  const departments = [
-    {
-      id: "civil-registry",
-      title: "Civil Registry",
-      description: "Birth, marriage, and death certificates",
-      serviceCount: 3,
-      color: "bg-blue-50",
-      iconColor: "text-blue-500",
-      icon: "FileText",
-    },
-    {
-      id: "immigration",
-      title: "Immigration & Passports",
-      description: "Passport applications, renewals, and visa services",
-      serviceCount: 2,
-      color: "bg-green-50",
-      iconColor: "text-green-500",
-      icon: "Plane",
-    },
-    {
-      id: "national-id",
-      title: "National ID",
-      description: "National ID cards, renewals, and updates",
-      serviceCount: 1,
-      color: "bg-purple-50",
-      iconColor: "text-purple-500",
-      icon: "CreditCard",
-    },
-    {
-      id: "driver-vehicle",
-      title: "Driver & Vehicle",
-      description: "Driver's licenses, vehicle registration, and permits",
-      serviceCount: 2,
-      color: "bg-orange-50",
-      iconColor: "text-orange-500",
-      icon: "Car",
-    },
-    {
-      id: "tax",
-      title: "Tax & Revenue",
-      description: "Tax filing, business registration, and tax ID",
-      serviceCount: 2,
-      color: "bg-red-50",
-      iconColor: "text-red-500",
-      icon: "Receipt",
-    },
-    {
-      id: "property",
-      title: "Property & Land",
-      description: "Property titles, deeds, and land registration",
-      serviceCount: 2,
-      color: "bg-teal-50",
-      iconColor: "text-teal-500",
-      icon: "Home",
-    },
-  ];
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+  const dispatch = useDispatch();
+
   const {
     isOpen: isHideOpen,
     onOpen: onHideOpen,
@@ -91,6 +44,167 @@ export default function DepartmentsPage() {
     onOpen: onHideEdit,
     onClose: onHideEditClose,
   } = useDisclosure();
+  useEffect(() => {
+    fetch("http://localhost:5000/api/admin/department-list")
+      .then((response) => response.json())
+      .then((data) => {
+        setDepartments(data); // Directly set the array of departments
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching departments:", error);
+        setLoading(false);
+      });
+  }, []);
+  const handleCreateDepartment = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/create-department",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: name, description }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create department");
+      }
+
+      // Update the local state with the new department
+      setDepartments((prevDepartments) => [
+        ...prevDepartments,
+        data.department,
+      ]);
+
+      // Success handling
+      dispatch(
+        showNotification({
+          message: "Department created successfully!",
+          status: 1, // Assuming 1 represents success
+        })
+      );
+
+      onHideClose(); // Close the modal
+    } catch (error) {
+      // Error handling
+      dispatch(
+        showNotification({
+          message: error.message || "Error creating department",
+          status: 0, // Assuming 0 represents error
+        })
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleDeleteDepartment = async (departmentId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/delete-department/${departmentId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete department");
+      }
+
+      // Update the local state to remove the deleted department
+      setDepartments((prevDepartments) =>
+        prevDepartments.filter((department) => department._id !== departmentId)
+      );
+
+      // Show success notification
+      dispatch(
+        showNotification({
+          message: "Department deleted successfully!",
+          status: 1, // Assuming 1 represents success
+        })
+      );
+    } catch (error) {
+      // Show error notification
+      dispatch(
+        showNotification({
+          message: error.message || "Error deleting department",
+          status: 0, // Assuming 0 represents error
+        })
+      );
+    }
+  };
+  const handleUpdateDepartment = async (departmentId, updatedData) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/update-department/${departmentId}`,
+        {
+          method: "PUT", // or "PATCH"
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update department");
+      }
+
+      // Update the local state with the updated department
+      setDepartments((prevDepartments) =>
+        prevDepartments.map((department) =>
+          department._id === departmentId
+            ? { ...department, ...updatedData }
+            : department
+        )
+      );
+
+      // Show success notification
+      dispatch(
+        showNotification({
+          message: "Department updated successfully!",
+          status: 1, // Assuming 1 represents success
+        })
+      );
+
+      onHideEditClose(); // Close the modal
+    } catch (error) {
+      // Show error notification
+      dispatch(
+        showNotification({
+          message: error.message || "Error updating department",
+          status: 0, // Assuming 0 represents error
+        })
+      );
+    }
+  };
+  const handleEditClick = (department) => {
+    setEditDepartmentId(department._id);
+    setEditName(department.name);
+    setEditDescription(department.description);
+    onHideEdit(); // Open the modal
+  };
+  const [editDepartmentId, setEditDepartmentId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const handleUpdateSubmit = () => {
+    const updatedData = {
+      name: editName,
+      description: editDescription,
+    };
+    handleUpdateDepartment(editDepartmentId, updatedData);
+  };
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -122,10 +236,10 @@ export default function DepartmentsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {departments.map((department) => (
+        {departments?.map((department) => (
           <Card key={department.id} className="overflow-hidden">
-            <CardHeader className={`${department.color}`}>
-              <CardTitle>{department.title}</CardTitle>
+            <CardHeader>
+              <CardTitle>{department.name}</CardTitle>
               <CardDescription className="text-gray-700">
                 {department.description}
               </CardDescription>
@@ -139,22 +253,18 @@ export default function DepartmentsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => {
-                      onHideEdit();
-                    }}
+                    className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+                    onClick={() => handleEditClick(department)} // Open the edit modal
                   >
                     <Edit className="h-4 w-4" />
-                    <span className="sr-only">Edit</span>
                   </Button>
-
                   <Button
                     variant="outline"
                     size="sm"
                     className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-600"
+                    onClick={() => handleDeleteDepartment(department._id)} // Pass the department ID
                   >
                     <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
                   </Button>
                 </div>
               </div>
@@ -166,20 +276,26 @@ export default function DepartmentsPage() {
         isOpen={isHideOpen}
         onClose={onHideClose}
         backdrop="blur"
-        aria-labelledby="modal-title"
         className="w-[90%] max-w-[600px] m-auto"
       >
         <ModalContent>
-          <ModalHeader className="text-lg font-semibold" id="modal-title">
+          <ModalHeader className="text-lg font-semibold">
             Add New Department
           </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+
               <div>
                 <label htmlFor="title" className="text-sm font-medium">
                   Department Name
                 </label>
-                <Input id="title" placeholder="Enter department name" />
+                <Input
+                  id="title"
+                  placeholder="Enter department name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
 
               <div>
@@ -190,15 +306,23 @@ export default function DepartmentsPage() {
                   id="description"
                   placeholder="Enter department description"
                   rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" asChild>
-              <Link href="/admin/departments">Cancel</Link>
+            <Button variant="light" onClick={onHideClose}>
+              Cancel
             </Button>
-            <Button color="primary">Create Department</Button>
+            <Button
+              color="primary"
+              onClick={handleCreateDepartment}
+              isLoading={loading}
+            >
+              Create Department
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -229,26 +353,31 @@ export default function DepartmentsPage() {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="title">Department Name</Label>
-                    <Input id="title" defaultValue={"aas"} />
+                    <Input
+                      id="title"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
-                    <Textarea id="description" defaultValue={"aas"} rows={3} />
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2"></div>
+                    <Textarea
+                      id="description"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      rows={3}
+                    />
                   </div>
                 </CardContent>
               </Card>
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" asChild>
-              <Link href="/admin/departments">Cancel</Link>
+            <Button variant="light" onClick={onHideEditClose}>
+              Cancel
             </Button>
-            <Button>Update Department</Button>
+            <Button onClick={handleUpdateSubmit}>Update Department</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Building,
   FileText,
@@ -7,7 +5,6 @@ import {
   Calendar,
   ArrowUp,
   ArrowDown,
-  Filter,
 } from "lucide-react";
 import {
   Card,
@@ -16,19 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../lib/ui/card";
-
-import {
-  Select,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../lib/ui/select";
-import { Button } from "../../../lib/ui/button";
-import { BarChart, DoughnutChart, LineChart } from "./dashboard-charts";
+import { BarChart, DoughnutChart } from "./dashboard-charts";
 
 export default function AdminDashboard() {
-  const [timeRange, setTimeRange] = useState("week");
-
   // Sample data for charts
   const departmentData = {
     labels: [
@@ -47,67 +34,6 @@ export default function AdminDashboard() {
     labels: ["Approved", "Pending", "In Review", "Rejected"],
     label: "Documents",
     values: [320, 180, 120, 45],
-  };
-
-  const timeRangeData = {
-    week: {
-      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      datasets: [
-        {
-          label: "Applications",
-          values: [28, 35, 42, 38, 45, 22, 18],
-          color: "rgba(59, 130, 246, 1)",
-        },
-        {
-          label: "Processed",
-          values: [20, 25, 30, 35, 40, 18, 15],
-          color: "rgba(16, 185, 129, 1)",
-        },
-      ],
-    },
-    month: {
-      labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-      datasets: [
-        {
-          label: "Applications",
-          values: [120, 145, 135, 155],
-          color: "rgba(59, 130, 246, 1)",
-        },
-        {
-          label: "Processed",
-          values: [95, 125, 115, 140],
-          color: "rgba(16, 185, 129, 1)",
-        },
-      ],
-    },
-    year: {
-      labels: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
-      datasets: [
-        {
-          label: "Applications",
-          values: [320, 350, 400, 420, 450, 480, 520, 550, 500, 480, 460, 520],
-          color: "rgba(59, 130, 246, 1)",
-        },
-        {
-          label: "Processed",
-          values: [280, 310, 350, 380, 410, 430, 470, 500, 450, 420, 400, 460],
-          color: "rgba(16, 185, 129, 1)",
-        },
-      ],
-    },
   };
 
   return (
@@ -171,7 +97,7 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold">Analytics Overview</h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
           <BarChart
             title="Applications by Department"
             description="Number of applications received by each department"
