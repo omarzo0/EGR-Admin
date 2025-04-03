@@ -5,6 +5,7 @@ import ErrorText from "../../components/Typography/ErrorText";
 import InputText from "../../components/Input/InputText";
 import { useDispatch } from "react-redux";
 import { setAuthData } from "../common/authSlice";
+import Cookies from "js-cookie";
 function Login() {
   const INITIAL_LOGIN_OBJ = {
     password: "",
@@ -16,13 +17,14 @@ function Login() {
   const [loginObj, setLoginObj] = useState(INITIAL_LOGIN_OBJ);
   const dispatch = useDispatch();
 
+  // In your Login component
   const submitForm = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
-    if (loginObj.emailId.trim() === "")
-      return setErrorMessage("Email is required!");
-    if (loginObj.password.trim() === "")
+    // Validation
+    if (!loginObj.emailId.trim()) return setErrorMessage("Email is required!");
+    if (!loginObj.password.trim())
       return setErrorMessage("Password is required!");
 
     try {
@@ -35,30 +37,45 @@ function Login() {
         }
       );
 
-      // Correct response structure access
-      const responseData = response.data;
-      if (responseData.status === "success") {
-        const { id, accessToken } = responseData.data;
+      console.log("Full API Response:", response); // Debug log
 
-        localStorage.setItem("token", accessToken);
-        localStorage.setItem("adminId", id);
+      // More flexible response handling
+      const token =
+        response.data?.accessToken ||
+        response.data?.token ||
+        response.data?.data?.accessToken;
 
-        dispatch(
-          setAuthData({
-            id: id,
-            accessToken: accessToken,
-          })
-        );
+      const userId =
+        response.data?.id || response.data?.user?.id || response.data?.data?.id;
 
-        console.log("Auth state after dispatching setAuthData:", setAuthData);
-
-        window.location.href = "/app/dashboard";
-      } else {
-        setErrorMessage(responseData.message || "Login failed");
+      if (!token) {
+        throw new Error("No access token received");
       }
+
+      // Store authentication data
+      localStorage.setItem("token", token);
+      if (userId) localStorage.setItem("adminId", userId);
+
+      // Dispatch to Redux
+      dispatch(
+        setAuthData({
+          id: userId,
+          accessToken: token,
+        })
+      );
+
+      // Redirect
+      window.location.href = "/app/dashboard";
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || "Login failed");
-      console.error("Login Error:", err);
+      console.error("Login error details:", err.response || err);
+
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Login failed. Please try again.";
+
+      setErrorMessage(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -6,11 +6,15 @@ import InputText from "../../../components/Input/InputText";
 import TextAreaInput from "../../../components/Input/TextAreaInput";
 import ToogleInput from "../../../components/Input/ToogleInput";
 import axios from "axios";
-
+import { useSelector } from "react-redux";
 function ProfileSettings() {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("profile");
-  const ADMIN_ID = "67dccaf0d8cabc4625ad8cd8"; // The admin ID you provided
+  const { isOpen, header } = useSelector((state) => state.rightDrawer);
+
+  const authState = useSelector((state) => state.auth);
+
+  const ADMIN_ID = authState?.adminId || localStorage.getItem("adminId");
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     first_name: "",
@@ -75,7 +79,7 @@ function ProfileSettings() {
       }
 
       const response = await axios.put(
-        `/api/admin/update-profile/${ADMIN_ID}`,
+        `/api/admin/profile/${ADMIN_ID}`,
         updateData
       );
 

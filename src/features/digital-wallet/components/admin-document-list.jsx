@@ -100,12 +100,12 @@ export function AdminDocumentList({ documents, onStatusChange, onDelete }) {
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-4 text-sm">{document.documentNumber}</td>
+                <td className="px-4 py-4 text-sm">{document.number}</td>
                 <td className="px-4 py-4 text-sm">
-                  {formatDate(document.dateAdded)}
+                  {formatDate(document.created_at)}
                 </td>
                 <td className="px-4 py-4 text-sm">
-                  {formatDate(document.expiryDate)}
+                  {formatDate(document.expiry_date)}
                 </td>
                 <td className="px-4 py-4">
                   <span
@@ -158,19 +158,6 @@ export function AdminDocumentList({ documents, onStatusChange, onDelete }) {
                             </button>
                           )}
 
-                          {document.status !== "rejected" && (
-                            <button
-                              className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                              onClick={() => {
-                                onStatusChange(document.id, "rejected");
-                                setActionMenuOpen(null);
-                              }}
-                            >
-                              <XCircle className="mr-3 h-4 w-4" />
-                              Reject Document
-                            </button>
-                          )}
-
                           {document.status !== "pending" && (
                             <button
                               className="flex w-full items-center px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100"
@@ -184,10 +171,24 @@ export function AdminDocumentList({ documents, onStatusChange, onDelete }) {
                             </button>
                           )}
 
+                          {document.status !== "rejected" && (
+                            <button
+                              className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                              onClick={() => {
+                                onStatusChange(document.id, "rejected");
+                                setActionMenuOpen(null);
+                              }}
+                            >
+                              <XCircle className="mr-3 h-4 w-4" />
+                              Reject Document
+                            </button>
+                          )}
+
                           <button
                             className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                             onClick={() => {
                               setActionMenuOpen(null);
+                              onDelete(document.id);
                             }}
                           >
                             <Trash2 className="mr-3 h-4 w-4" />

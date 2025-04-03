@@ -14,28 +14,127 @@ import {
   CardTitle,
 } from "../../../lib/ui/card";
 import { BarChart, DoughnutChart } from "./dashboard-charts";
+import { useState, useEffect } from "react";
 
 export default function AdminDashboard() {
-  // Sample data for charts
-  const departmentData = {
-    labels: [
-      "Civil Registry",
-      "Immigration",
-      "National ID",
-      "Driver & Vehicle",
-      "Tax & Revenue",
-      "Property & Land",
-    ],
-    label: "Applications",
-    values: [124, 98, 156, 87, 65, 72],
-  };
+  const [departmentCount, setDepartmentCount] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const statusData = {
     labels: ["Approved", "Pending", "In Review", "Rejected"],
     label: "Documents",
     values: [320, 180, 120, 45],
   };
+  useEffect(() => {
+    const fetchDepartmentCount = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/department-count"
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch department count");
+        }
+        const count = await response.json(); // Directly get the number
+        setDepartmentCount(count); // Set the number directly
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchDepartmentCount();
+  }, []);
+  const [serviceCount, setServiceCount] = useState(null);
+  const [serviceLoading, setServiceLoading] = useState(true);
+  const [serviceError, setServiceError] = useState(null);
+
+  useEffect(() => {
+    const fetchServiceCount = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/services-count"
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch service count");
+        }
+        const count = await response.json();
+        setServiceCount(count);
+      } catch (err) {
+        setServiceError(err.message);
+      } finally {
+        setServiceLoading(false);
+      }
+    };
+
+    fetchServiceCount();
+  }, []);
+  const [citizenCount, setCitizenCount] = useState(null);
+  const [citizenLoading, setCitizenLoading] = useState(true);
+  const [citizenError, setCitizenError] = useState(null);
+  useEffect(() => {
+    const fetchCitizenCount = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/citizen-count"
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch citizen count");
+        }
+        const count = await response.json();
+        setCitizenCount(count);
+      } catch (err) {
+        setCitizenError(err.message);
+      } finally {
+        setCitizenLoading(false);
+      }
+    };
+
+    fetchCitizenCount();
+  }, []);
+  const [documentCount, setDocumentCount] = useState(null);
+  const [documentLoading, setDocumentLoading] = useState(true);
+  const [documentError, setDocumentError] = useState(null);
+
+  useEffect(() => {
+    const fetchDocumentCount = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/document-count"
+        );
+        if (!response.ok) throw new Error("Failed to fetch document count");
+        const count = await response.json();
+        setDocumentCount(count);
+      } catch (err) {
+        setDocumentError(err.message);
+      } finally {
+        setDocumentLoading(false);
+      }
+    };
+    fetchDocumentCount();
+  }, []);
+  const [documentStatusData, setDocumentStatusData] = useState({
+    labels: [],
+    values: [],
+  });
+
+  useEffect(() => {
+    const fetchDocumentStatusCounts = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/document-count-status"
+        );
+        if (!response.ok)
+          throw new Error("Failed to fetch document status counts");
+        const data = await response.json();
+        setDocumentStatusData(data);
+      } catch (err) {
+        console.error("Error fetching document status counts:", err);
+      }
+    };
+    fetchDocumentStatusCounts();
+  }, []);
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Dashboard Overview</h1>
@@ -49,8 +148,16 @@ export default function AdminDashboard() {
             <Building className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">6</div>
-            <p className="text-xs text-gray-500">+2 from last month</p>
+            {loading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : error ? (
+              <div className="text-red-500 text-sm">{error}</div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{departmentCount}</div>
+                <p className="text-xs text-gray-500">+2 from last month</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -62,32 +169,58 @@ export default function AdminDashboard() {
             <FileText className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-gray-500">+5 from last month</p>
+            {serviceLoading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : serviceError ? (
+              <div className="text-red-500 text-sm">{serviceError}</div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{serviceCount}</div>
+                <p className="text-xs text-gray-500">+5 from last month</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
-              Registered Users
+              Total Citizens
             </CardTitle>
             <Users className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-gray-500">+123 from last month</p>
+            {citizenLoading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : citizenError ? (
+              <div className="text-red-500 text-sm">{citizenError}</div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{citizenCount}</div>
+                <p className="text-xs text-gray-500">+10 from last month</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Appointments</CardTitle>
-            <Calendar className="h-4 w-4 text-gray-500" />
+            <CardTitle className="text-sm font-medium">
+              Total Document Applications
+            </CardTitle>
+            <FileText className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">567</div>
-            <p className="text-xs text-gray-500">+89 from last month</p>
+            {documentLoading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : documentError ? (
+              <div className="text-red-500 text-sm">{documentError}</div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{documentCount}</div>
+                <p className="text-xs text-gray-500">+15 from last month</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -101,13 +234,17 @@ export default function AdminDashboard() {
           <BarChart
             title="Applications by Department"
             description="Number of applications received by each department"
-            data={departmentData}
+            data={departmentCount}
           />
 
           <DoughnutChart
-            title="Document Status Distribution"
-            description="Current status of all documents in the system"
-            data={statusData}
+            title="Document Status"
+            description="Distribution of document application statuses"
+            data={{
+              labels: documentStatusData.labels,
+              values: documentStatusData.values,
+              label: "Documents",
+            }}
           />
         </div>
       </div>

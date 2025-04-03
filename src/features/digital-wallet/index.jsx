@@ -92,13 +92,35 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus;
   });
 
-  const stats = {
-    total: wallets.length,
-    active: wallets.filter((w) => w.status === "active").length,
-    suspended: wallets.filter((w) => w.status === "suspended").length,
-    documents: wallets.reduce((acc, wallet) => acc + wallet.documentsCount, 0),
-  };
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    suspended: 0,
+    documents: 0,
+  });
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/admin/statistics/digital-wallets"
+        );
+        const data = await response.json();
+        if (data.status === "success") {
+          setStats({
+            total: data.data.wallets.total,
+            active: data.data.wallets.active,
+            suspended: data.data.wallets.suspended,
+            documents: data.data.documents.total,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-6">

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "../../../lib/ui/button";
 import {
   Card,
@@ -18,45 +17,17 @@ import {
   TableHeader,
   TableRow,
 } from "../../../lib/ui/table";
-import { ChevronLeft, Plus, Edit, Save, X, Trash2 } from "lucide-react";
+import { Plus, Edit, Save, X, Trash2 } from "lucide-react";
 import { Slider } from "../../../lib/ui/slider";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { showNotification } from "../../common/headerSlice";
 
-// Mock data for service points
-const mockServices = [
-  {
-    id: 1,
-    name: "Waste Management",
-    description: "Garbage collection and recycling services",
-    points: 10,
-  },
-  {
-    id: 2,
-    name: "Road Maintenance",
-    description: "Street repairs and maintenance",
-    points: 15,
-  },
-  {
-    id: 3,
-    name: "Public Transportation",
-    description: "Bus and transit services",
-    points: 12,
-  },
-  {
-    id: 4,
-    name: "Parks and Recreation",
-    description: "Public parks and recreational facilities",
-    points: 8,
-  },
-  {
-    id: 5,
-    name: "Water Supply",
-    description: "Water distribution and quality",
-    points: 20,
-  },
-];
+const API_BASE_URL = "http://localhost:5000/api";
 
 export default function PointsPage() {
-  const [services, setServices] = useState(mockServices);
+  const dispatch = useDispatch();
+  const [services, setServices] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [newService, setNewService] = useState({
     name: "",
@@ -64,9 +35,80 @@ export default function PointsPage() {
     points: 10,
   });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch services from API
+  const fetchServices = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/admin/get-services`
+      );
+      setServices(response.data.data);
+    } catch (error) {
+      dispatch(
+        showNotification({
+          message: "Failed to load services",
+          status: 0, // error status
+        })
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update service points
+  const updateServicePoints = async (id, points) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/admin/update-point/${id}/points`,
+        { points }
+      );
+      dispatch(
+        showNotification({
+          message: "Service points updated successfully",
+          status: 1, // success status
+        })
+      );
+      return true;
+    } catch (error) {
+      dispatch(
+        showNotification({
+          message: error.response?.data?.message || "Failed to update service",
+          status: 0,
+        })
+      );
+      return false;
+    }
+  };
+
+  // Delete service
+  const deleteService = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/admin/delete-point/${id}`);
+      dispatch(
+        showNotification({
+          message: "Service deleted successfully",
+          status: 1,
+        })
+      );
+      return true;
+    } catch (error) {
+      dispatch(
+        showNotification({
+          message: error.response?.data?.message || "Failed to delete service",
+          status: 0,
+        })
+      );
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
 
   const startEditing = (service) => {
-    setEditingId(service.id);
+    setEditingId(service._id);
     setNewService({
       name: service.name,
       description: service.description,
@@ -83,112 +125,39 @@ export default function PointsPage() {
     });
   };
 
-  const saveService = (id) => {
-    if (newService.name && newService.description) {
+  const handleSaveService = async (id) => {
+    const success = await updateServicePoints(id, newService.points);
+    if (success) {
       setServices(
         services.map((service) =>
-          service.id === id ? { ...service, ...newService } : service
+          service._id === id ? { ...service, ...newService } : service
         )
       );
       setEditingId(null);
     }
   };
 
-  const addService = () => {
-    if (newService.name && newService.description) {
-      const service = {
-        id: services.length + 1,
-        ...newService,
-      };
-      setServices([...services, service]);
-      setNewService({
-        name: "",
-        description: "",
-        points: 10,
-      });
-      setShowAddForm(false);
+  const handleDeleteService = async (id) => {
+    const success = await deleteService(id);
+    if (success) {
+      setServices(services.filter((service) => service._id !== id));
     }
   };
+
+  if (isLoading) {
+    return <div className="container py-6">Loading services...</div>;
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
       <main className="flex-1">
         <div className="container py-6">
-          {showAddForm && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Add New Service</CardTitle>
-                <CardDescription>
-                  Define a new service type and assign points
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium">
-                    Service Name
-                  </label>
-                  <Input
-                    id="name"
-                    placeholder="Enter service name"
-                    value={newService.name}
-                    onChange={(e) =>
-                      setNewService({ ...newService, name: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="description" className="text-sm font-medium">
-                    Description
-                  </label>
-                  <Input
-                    id="description"
-                    placeholder="Enter service description"
-                    value={newService.description}
-                    onChange={(e) =>
-                      setNewService({
-                        ...newService,
-                        description: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="points" className="text-sm font-medium">
-                    Points Value: {newService.points}
-                  </label>
-                  <Slider
-                    id="points"
-                    min={1}
-                    max={50}
-                    step={1}
-                    value={[newService.points]}
-                    onValueChange={(value) =>
-                      setNewService({ ...newService, points: value[0] })
-                    }
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  onClick={addService}
-                  disabled={!newService.name || !newService.description}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Service
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Service Points Configuration</h1>
+          </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Service Points Configuration</CardTitle>
-              <CardDescription>
-                Manage point values assigned to different service types
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -201,102 +170,111 @@ export default function PointsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {services.map((service) => (
-                    <TableRow key={service.id}>
-                      {editingId === service.id ? (
-                        <>
-                          <TableCell>
-                            <Input
-                              value={newService.name}
-                              onChange={(e) =>
-                                setNewService({
-                                  ...newService,
-                                  name: e.target.value,
-                                })
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <Input
-                              value={newService.description}
-                              onChange={(e) =>
-                                setNewService({
-                                  ...newService,
-                                  description: e.target.value,
-                                })
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Slider
-                              min={1}
-                              max={50}
-                              step={1}
-                              value={[newService.points]}
-                              onValueChange={(value) =>
-                                setNewService({
-                                  ...newService,
-                                  points: value[0],
-                                })
-                              }
-                              className="w-24"
-                            />
-                            <span className="ml-2">{newService.points}</span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => saveService(service.id)}
-                            >
-                              <Save className="mr-2 h-4 w-4" />
-                              Save
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={cancelEditing}
-                            >
-                              <X className="mr-2 h-4 w-4" />
-                              Cancel
-                            </Button>
-                          </TableCell>
-                        </>
-                      ) : (
-                        <>
-                          <TableCell className="font-medium">
-                            {service.name}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {service.description}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-bold">{service.points}</span>{" "}
-                            points
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => startEditing(service)}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              // Assuming you have a function to handle delete
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              {/* Add the delete icon here */}
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </>
-                      )}
+                  {services.length > 0 ? (
+                    services.map((service) => (
+                      <TableRow key={service._id}>
+                        {editingId === service._id ? (
+                          <>
+                            <TableCell>
+                              <Input
+                                value={newService.name}
+                                onChange={(e) =>
+                                  setNewService({
+                                    ...newService,
+                                    name: e.target.value,
+                                  })
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <Input
+                                value={newService.description}
+                                onChange={(e) =>
+                                  setNewService({
+                                    ...newService,
+                                    description: e.target.value,
+                                  })
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Slider
+                                min={1}
+                                max={50}
+                                step={1}
+                                value={[newService.points]}
+                                onValueChange={(value) =>
+                                  setNewService({
+                                    ...newService,
+                                    points: value[0],
+                                  })
+                                }
+                                className="w-24"
+                              />
+                              <span className="ml-2">{newService.points}</span>
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSaveService(service._id)}
+                              >
+                                <Save className="mr-2 h-4 w-4" />
+                                Save
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelEditing}
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel
+                              </Button>
+                            </TableCell>
+                          </>
+                        ) : (
+                          <>
+                            <TableCell className="font-medium">
+                              {service.name}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {service.Description}
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-bold">
+                                {service.points}
+                              </span>{" "}
+                              points
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => startEditing(service)}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteService(service._id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </Button>
+                            </TableCell>
+                          </>
+                        )}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        No services found
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

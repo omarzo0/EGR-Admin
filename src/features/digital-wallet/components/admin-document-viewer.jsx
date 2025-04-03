@@ -26,8 +26,16 @@ export function AdminDocumentViewer({ document, onClose, onStatusChange }) {
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <div className="aspect-video bg-gray-100 rounded-md flex items-center justify-center mb-4">
-                <FileText className="h-16 w-16 text-gray-400" />
+              <div className="aspect-video bg-gray-100 rounded-md flex items-center justify-center mb-4 overflow-hidden">
+                {document.document_image ? (
+                  <img
+                    src={document.document_image}
+                    alt={document.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <FileText className="h-16 w-16 text-gray-400" />
+                )}
               </div>
 
               <div className="space-y-4">
@@ -109,21 +117,21 @@ export function AdminDocumentViewer({ document, onClose, onStatusChange }) {
                 <h4 className="text-sm font-medium text-gray-500">
                   Document Number
                 </h4>
-                <p>{document.documentNumber}</p>
+                <p>{document.number}</p>
               </div>
 
               <div>
                 <h4 className="text-sm font-medium text-gray-500">
                   Date Added
                 </h4>
-                <p>{formatDate(document.dateAdded)}</p>
+                <p>{formatDate(document.created_at)}</p>
               </div>
 
               <div>
                 <h4 className="text-sm font-medium text-gray-500">
                   Expiry Date
                 </h4>
-                <p>{formatDate(document.expiryDate)}</p>
+                <p>{formatDate(document.expiry_date)}</p>
               </div>
 
               <div>

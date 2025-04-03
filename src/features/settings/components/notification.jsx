@@ -9,84 +9,233 @@ import {
   CardFooter,
 } from "../../../lib/ui/card";
 import { Input } from "../../../lib/ui/input";
-import {
-  Select,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../lib/ui/select";
-
 import { Send } from "lucide-react";
 
-const mockNotifications = [
-  {
-    id: 1,
-    title: "System Maintenance",
-    recipients: "All Citizens",
-    sentDate: "2025-03-15",
-    status: "Delivered",
-  },
-  {
-    id: 2,
-    title: "New Service Available",
-    recipients: "Registered Users",
-    sentDate: "2025-03-10",
-    status: "Delivered",
-  },
-  {
-    id: 3,
-    title: "Community Meeting",
-    recipients: "Downtown District",
-    sentDate: "2025-03-08",
-    status: "Pending",
-  },
-];
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { showNotification } from "../../common/headerSlice";
+
+// Custom Select Component
+const CustomSelect = ({ value, onChange, options, placeholder, id, label }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      {label && (
+        <label htmlFor={id} className="text-sm font-medium">
+          {label}
+        </label>
+      )}
+      <div className="relative">
+        <button
+          id={id}
+          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => setIsOpen(!isOpen)}
+          type="button"
+        >
+          {value
+            ? options.find((opt) => opt.value === value)?.label
+            : placeholder}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`h-4 w-4 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        {isOpen && (
+          <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95">
+            <div className="p-1">
+              {options.map((option) => (
+                <div
+                  key={option.value}
+                  className={`relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none hover:bg-accent hover:text-accent-foreground ${
+                    value === option.value
+                      ? "bg-accent text-accent-foreground"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  {option.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const dispatch = useDispatch();
+
+  const [isLoading, setIsLoading] = useState(false);
   const [newNotification, setNewNotification] = useState({
     title: "",
-
-    recipients: "",
+    message: "",
+    recipientType: "citizen",
+    recipients: "single",
+    recipientId: "",
+    adminRole: "",
   });
 
+  const recipientTypeOptions = [
+    { value: "citizen", label: "Citizen" },
+    { value: "admin", label: "Admin" },
+  ];
+
+  const recipientsOptions = [
+    {
+      value: "single",
+      label: `Specific ${
+        newNotification.recipientType === "citizen" ? "Citizen" : "Admin"
+      }`,
+    },
+    {
+      value: "all",
+      label: `All ${
+        newNotification.recipientType === "citizen" ? "Citizens" : "Admins"
+      }`,
+    },
+    ...(newNotification.recipientType === "admin"
+      ? [{ value: "role", label: "Admins by Role" }]
+      : []),
+  ];
+
+  const adminRoleOptions = [
+    { value: "superadmin", label: "Super Admin" },
+    { value: "admin", label: "Admin" },
+    { value: "support", label: "Support" },
+  ];
+
   const handleInputChange = (field, value) => {
-    setNewNotification({
-      ...newNotification,
+    setNewNotification((prev) => ({
+      ...prev,
       [field]: value,
-    });
+      // Reset dependent fields when changing recipient type or scope
+      ...(field === "recipientType"
+        ? {
+            recipients: "single",
+            recipientId: "",
+            adminRole: "",
+          }
+        : {}),
+      ...(field === "recipients"
+        ? {
+            recipientId: "",
+            adminRole: "",
+          }
+        : {}),
+    }));
   };
 
-  const sendNotification = () => {
-    if (newNotification.title && newNotification.recipients) {
-      const notification = {
-        id: notifications.length + 1,
-        ...newNotification,
-        sentDate: new Date().toISOString().split("T")[0],
-        status: "Pending",
+  const sendNotification = async () => {
+    if (!newNotification.title || !newNotification.message) {
+      dispatch(
+        showNotification({
+          message: "Title and message are required",
+          status: 0,
+        })
+      );
+      return;
+    }
+
+    if (newNotification.recipients === "role" && !newNotification.adminRole) {
+      dispatch(
+        showNotification({
+          message: "Admin role is required when sending by role",
+          status: 0,
+        })
+      );
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const baseData = {
+        title: newNotification.title,
+        message: newNotification.message,
       };
-      setNotifications([notification, ...notifications]);
+
+      let endpoint;
+      let payload = baseData;
+
+      if (newNotification.recipientType === "citizen") {
+        if (newNotification.recipients === "single") {
+          endpoint = `/api/admin/notifications/citizen/${newNotification.recipientId}`;
+        } else {
+          endpoint = "/api/admin/citizen-notifications";
+        }
+      } else {
+        // admin
+        if (newNotification.recipients === "single") {
+          endpoint = `/api/admin/send/${newNotification.recipientId}`;
+        } else if (newNotification.recipients === "all") {
+          endpoint = "/api/admin/notifications/admins/all";
+        } else {
+          // role
+          endpoint = "/api/admin/notifications/admins";
+          payload = { ...baseData, role: newNotification.adminRole };
+        }
+      }
+
+      const response = await axios.post(endpoint, payload);
+
+      dispatch(
+        showNotification({
+          message: response.data.message || "Notification sent successfully",
+          status: 1,
+        })
+      );
+
+      // Reset form
       setNewNotification({
         title: "",
-
-        recipients: "",
+        message: "",
+        recipientType: "citizen",
+        recipients: "single",
+        recipientId: "",
+        adminRole: "",
       });
+    } catch (error) {
+      dispatch(
+        showNotification({
+          message: error.response?.data?.message || error.message,
+          status: 0,
+        })
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
-
   return (
     <div className="container py-6">
       <Card>
         <CardHeader>
           <CardTitle>Send Notification</CardTitle>
           <CardDescription>
-            Create and send notifications to citizens
+            Create and send notifications to citizens or admins
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium">
-              Notification Title
+              Notification Title*
             </label>
             <Input
               id="title"
@@ -97,53 +246,97 @@ export default function NotificationsPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="recipients" className="text-sm font-medium">
-              Recipients
+            <label htmlFor="message" className="text-sm font-medium">
+              Message*
             </label>
-            <Select
-              onValueChange={(value) => {
-                handleInputChange("recipients", value);
-                if (value !== "Citizen Id") {
-                  handleInputChange("citizenId", ""); // Reset Citizen ID when changing selection
-                }
-              }}
-              value={newNotification.recipients}
-            >
-              <SelectTrigger id="recipients">
-                <SelectValue placeholder="Select recipients" />
-              </SelectTrigger>
-
-              <SelectItem value="All Citizens">All Citizens</SelectItem>
-              <SelectItem value="Registered Users">Registered Users</SelectItem>
-              <SelectItem value="Downtown District">
-                Downtown District
-              </SelectItem>
-              <SelectItem value="Suburban Area">Suburban Area</SelectItem>
-              <SelectItem value="Business Owners">Business Owners</SelectItem>
-              <SelectItem value="Citizen Id">Citizen Id</SelectItem>
-            </Select>
+            <Input
+              id="message"
+              placeholder="Enter notification message"
+              value={newNotification.message}
+              onChange={(e) => handleInputChange("message", e.target.value)}
+            />
           </div>
 
-          {/* Show Citizen ID input field only when "Citizen Id" is selected */}
-          {newNotification.recipients === "Citizen Id" && (
+          <CustomSelect
+            id="recipientType"
+            value={newNotification.recipientType}
+            onChange={(value) => handleInputChange("recipientType", value)}
+            options={recipientTypeOptions}
+            placeholder="Select recipient type"
+            label="Recipient Type*"
+          />
+
+          <CustomSelect
+            id="recipients"
+            value={newNotification.recipients}
+            onChange={(value) => handleInputChange("recipients", value)}
+            options={recipientsOptions}
+            placeholder="Select recipients"
+            label="Send To*"
+          />
+
+          {newNotification.recipients === "single" && (
             <div className="space-y-2">
-              <label htmlFor="citizenId" className="text-sm font-medium">
-                Citizen Id
+              <label htmlFor="recipientId" className="text-sm font-medium">
+                {newNotification.recipientType === "citizen"
+                  ? "Citizen"
+                  : "Admin"}{" "}
+                ID*
               </label>
               <Input
-                id="citizenId"
-                placeholder="Enter Citizen Id"
-                value={newNotification.citizenId || ""}
-                onChange={(e) => handleInputChange("citizenId", e.target.value)}
+                id="recipientId"
+                placeholder={`Enter ${
+                  newNotification.recipientType === "citizen"
+                    ? "Citizen"
+                    : "Admin"
+                } ID`}
+                value={newNotification.recipientId}
+                onChange={(e) =>
+                  handleInputChange("recipientId", e.target.value)
+                }
               />
             </div>
           )}
+
+          {newNotification.recipientType === "admin" &&
+            newNotification.recipients === "role" && (
+              <div className="space-y-2">
+                <label htmlFor="adminRole" className="text-sm font-medium">
+                  Admin Role*
+                </label>
+                <select
+                  id="adminRole"
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={newNotification.adminRole}
+                  onChange={(e) =>
+                    handleInputChange("adminRole", e.target.value)
+                  }
+                >
+                  <option value="">Select admin role</option>
+                  {adminRoleOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
         </CardContent>
 
         <CardFooter>
-          <Button className="w-full" onClick={sendNotification}>
-            <Send className="mr-2 h-4 w-4" />
-            Send Notification
+          <Button
+            className="w-full"
+            onClick={sendNotification}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              "Sending..."
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Send Notification
+              </>
+            )}
           </Button>
         </CardFooter>
       </Card>

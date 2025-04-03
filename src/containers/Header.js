@@ -5,11 +5,12 @@ import BellIcon from "@heroicons/react/24/outline/BellIcon";
 import Bars3Icon from "@heroicons/react/24/outline/Bars3Icon";
 import MoonIcon from "@heroicons/react/24/outline/MoonIcon";
 import SunIcon from "@heroicons/react/24/outline/SunIcon";
+import ArrowLeftOnRectangleIcon from "@heroicons/react/24/outline/ArrowLeftOnRectangleIcon"; // Import logout icon
 import { openRightDrawer } from "../features/common/rightDrawerSlice";
 import { RIGHT_DRAWER_TYPES } from "../utils/globalConstantUtil";
-
+import Cookies from "js-cookie";
 import { NavLink, Routes, Link, useLocation } from "react-router-dom";
-
+import { clearAuthData } from "../features/common/authSlice"; // Update path as needed
 function Header() {
   const dispatch = useDispatch();
   const { noOfNotifications, pageTitle } = useSelector((state) => state.header);
@@ -43,15 +44,22 @@ function Header() {
   };
 
   function logoutUser() {
-    localStorage.clear();
-    window.location.href = "/";
+    // Clear all authentication data
+    localStorage.removeItem("token");
+    localStorage.removeItem("adminId");
+    Cookies.remove("token");
+
+    // Clear Redux state if needed
+    dispatch(clearAuthData());
+
+    // Force full page reload to reset application state
+    window.location.href = "/login";
+    window.location.reload(true);
   }
 
   return (
-    // navbar fixed  flex-none justify-between bg-base-300  z-10 shadow-md
-
     <>
-      <div className="navbar sticky top-0 bg-base-100  z-10 shadow-md ">
+      <div className="navbar sticky top-0 bg-base-100 z-10 shadow-md">
         {/* Menu toogle for mobile view or small screen */}
         <div className="flex-1">
           <label
@@ -62,42 +70,10 @@ function Header() {
           </label>
         </div>
 
-        <div className="flex-none ">
-          {/* Multiple theme selection, uncomment this if you want to enable multiple themes selection, 
-                also includes corporate and retro themes in tailwind.config file */}
-
-          {/* <select className="select select-sm mr-4" data-choose-theme>
-                    <option disabled selected>Theme</option>
-                    <option value="light">Default</option>
-                    <option value="dark">Dark</option>
-                    <option value="corporate">Corporate</option>
-                    <option value="retro">Retro</option>
-                </select> */}
-
-          {/* Light and dark theme selection toogle **/}
-          {/* <label className="swap ">
-            <input type="checkbox" />
-            <SunIcon
-              data-set-theme="light"
-              data-act-class="ACTIVECLASS"
-              className={
-                "fill-current w-6 h-6 " +
-                (currentTheme === "dark" ? "swap-on" : "swap-off")
-              }
-            />
-            <MoonIcon
-              data-set-theme="dark"
-              data-act-class="ACTIVECLASS"
-              className={
-                "fill-current w-6 h-6 " +
-                (currentTheme === "light" ? "swap-on" : "swap-off")
-              }
-            />
-          </label> */}
-
+        <div className="flex-none">
           {/* Notification icon */}
           <button
-            className="btn btn-ghost ml-4  btn-circle"
+            className="btn btn-ghost ml-4 btn-circle"
             onClick={() => openNotification()}
           >
             <div className="indicator">
@@ -110,7 +86,15 @@ function Header() {
             </div>
           </button>
 
-          {/* Profile icon, opening menu on click */}
+          {/* Logout button */}
+          <button
+            className="btn btn-ghost ml-4"
+            onClick={logoutUser}
+            title="Logout"
+          >
+            <ArrowLeftOnRectangleIcon className="h-6 w-6" />
+            <span className="hidden md:inline-block ml-2">Logout</span>
+          </button>
         </div>
       </div>
     </>

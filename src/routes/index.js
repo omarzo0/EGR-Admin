@@ -73,7 +73,7 @@ const routes = [
     component: DigitalWallet,
   },
   {
-    path: "/wallet",
+    path: "/wallet/:id",
     component: Wallet,
   },
   {

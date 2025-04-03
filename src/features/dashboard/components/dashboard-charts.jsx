@@ -26,11 +26,11 @@ export function BarChart({ title, description, data }) {
       chartInstance.current = new Chart(ctx, {
         type: "bar",
         data: {
-          labels: data.labels,
+          labels: data?.labels,
           datasets: [
             {
-              label: data.label,
-              data: data.values,
+              label: data?.label,
+              data: data?.values,
               backgroundColor: [
                 "rgba(59, 130, 246, 0.7)", // blue
                 "rgba(16, 185, 129, 0.7)", // green
@@ -109,11 +109,11 @@ export function DoughnutChart({ title, description, data }) {
       chartInstance.current = new Chart(ctx, {
         type: "doughnut",
         data: {
-          labels: data.labels,
+          labels: data?.labels,
           datasets: [
             {
-              label: data.label,
-              data: data.values,
+              label: data?.label,
+              data: data?.values,
               backgroundColor: [
                 "rgba(16, 185, 129, 0.7)", // green - Approved
                 "rgba(245, 158, 11, 0.7)", // amber - Pending
