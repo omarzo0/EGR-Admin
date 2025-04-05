@@ -80,7 +80,7 @@ export default function AdminDashboard() {
     }, 1000);
   }, []);
 
-  const filteredWallets = wallets.filter((wallet) => {
+  const filteredWallets = wallets?.filter((wallet) => {
     const matchesSearch =
       wallet.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       wallet.email.toLowerCase().includes(searchTerm.toLowerCase()) ||

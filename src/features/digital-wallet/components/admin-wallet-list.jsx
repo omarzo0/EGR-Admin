@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Eye, MoreHorizontal, UserCheck, UserX, Trash2 } from "lucide-react";
 import { Button } from "../../../lib/ui/button";

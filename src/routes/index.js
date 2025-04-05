@@ -16,6 +16,8 @@ const DigitalWallet = lazy(() => import("../pages/protected/digital-wallet"));
 const Wallet = lazy(() => import("../pages/protected/wallet"));
 const Documents = lazy(() => import("../pages/protected/documents"));
 const Details = lazy(() => import("../pages/protected/details"));
+const Reminder = lazy(() => import("../pages/protected/reminder"));
+const Notification = lazy(() => import("../pages/protected/notification"));
 const ProfileSettings = lazy(() =>
   import("../pages/protected/ProfileSettings")
 );
@@ -83,6 +85,14 @@ const routes = [
   {
     path: "/details",
     component: Details,
+  },
+  {
+    path: "/reminder",
+    component: Reminder,
+  },
+  {
+    path: "/notification",
+    component: Notification,
   },
 ];
 

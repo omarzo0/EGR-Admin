@@ -3,7 +3,6 @@ import TitleCard from "../../../components/Cards/TitleCard";
 import { showNotification } from "../../common/headerSlice";
 import TextAreaInput from "../../../components/Input/TextAreaInput";
 import AccountSettings from "../components/accountSettings";
-import Notification from "../components/notification";
 import Points from "../components/points";
 import Feedback from "../components/feedback";
 
@@ -29,7 +28,6 @@ function ProfileSettings() {
             onClick={() => setActiveTab(tab)}
           >
             {tab === "profile" && "Profile Settings"}
-            {tab === "notifications" && "Notifications"}
             {tab === "points" && "Points"}
             {tab === "feedback" && "Feedback"}
           </button>
@@ -38,8 +36,6 @@ function ProfileSettings() {
 
       {/* Tab Content */}
       {activeTab === "profile" && <AccountSettings />}
-
-      {activeTab === "notifications" && <Notification />}
 
       {activeTab === "points" && <Points />}
 

@@ -65,11 +65,16 @@ const routes = [
     icon: <WalletIcon className={submenuIconClasses} />,
     name: "Billing",
   },
-  // {
-  //   path: "/app/settings-team", // url
-  //   icon: <UsersIcon className={submenuIconClasses} />, // icon component
-  //   name: "Reminders", // name that appear in Sidebar
-  // },
+  {
+    path: "/app/reminder", // url
+    icon: <UsersIcon className={submenuIconClasses} />, // icon component
+    name: "Reminders", // name that appear in Sidebar
+  },
+  {
+    path: "/app/notification", // url
+    icon: <UsersIcon className={submenuIconClasses} />, // icon component
+    name: "Notification", // name that appear in Sidebar
+  },
 
   {
     path: "/app/settings-profile", //url
