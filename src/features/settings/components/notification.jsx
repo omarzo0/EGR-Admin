@@ -117,9 +117,9 @@ export default function NotificationsPage() {
   ];
 
   const adminRoleOptions = [
-    { value: "superadmin", label: "Super Admin" },
+    { value: "super admin", label: "Super Admin" },
     { value: "admin", label: "Admin" },
-    { value: "support", label: "Support" },
+    { value: "officer", label: "Officer" },
   ];
 
   const handleInputChange = (field, value) => {
@@ -190,7 +190,10 @@ export default function NotificationsPage() {
         } else {
           // role
           endpoint = "/api/admin/notifications/admins";
-          payload = { ...baseData, role: newNotification.adminRole };
+          payload = {
+            ...baseData,
+            role: newNotification.adminRole,
+          };
         }
       }
 
@@ -301,24 +304,14 @@ export default function NotificationsPage() {
           {newNotification.recipientType === "admin" &&
             newNotification.recipients === "role" && (
               <div className="space-y-2">
-                <label htmlFor="adminRole" className="text-sm font-medium">
-                  Admin Role*
-                </label>
-                <select
+                <CustomSelect
                   id="adminRole"
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={newNotification.adminRole}
-                  onChange={(e) =>
-                    handleInputChange("adminRole", e.target.value)
-                  }
-                >
-                  <option value="">Select admin role</option>
-                  {adminRoleOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => handleInputChange("adminRole", value)}
+                  options={adminRoleOptions}
+                  placeholder="Select admin role"
+                  label="Admin Role*"
+                />
               </div>
             )}
         </CardContent>

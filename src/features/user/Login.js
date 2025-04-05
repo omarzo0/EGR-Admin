@@ -17,7 +17,6 @@ function Login() {
   const [loginObj, setLoginObj] = useState(INITIAL_LOGIN_OBJ);
   const dispatch = useDispatch();
 
-  // In your Login component
   const submitForm = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -39,43 +38,46 @@ function Login() {
 
       console.log("Full API Response:", response); // Debug log
 
-      // More flexible response handling
-      const token =
-        response.data?.accessToken ||
-        response.data?.token ||
-        response.data?.data?.accessToken;
+      // Handle response based on status
+      if (response.data?.status === "success") {
+        const token = response.data?.data?.accessToken;
+        const userId = response.data?.data?.id;
 
-      const userId =
-        response.data?.id || response.data?.user?.id || response.data?.data?.id;
+        if (!token) {
+          throw new Error("No access token received");
+        }
 
-      if (!token) {
-        throw new Error("No access token received");
+        // Store authentication data
+        localStorage.setItem("token", token);
+        if (userId) localStorage.setItem("adminId", userId);
+
+        // Dispatch to Redux
+        dispatch(
+          setAuthData({
+            id: userId,
+            accessToken: token,
+          })
+        );
+
+        // Redirect
+        window.location.href = "/app/dashboard";
+      } else if (response.data?.status === "error") {
+        // Handle error response from backend
+        throw new Error(response.data?.error?.message || "Login failed");
+      } else {
+        throw new Error("Unexpected response format");
       }
-
-      // Store authentication data
-      localStorage.setItem("token", token);
-      if (userId) localStorage.setItem("adminId", userId);
-
-      // Dispatch to Redux
-      dispatch(
-        setAuthData({
-          id: userId,
-          accessToken: token,
-        })
-      );
-
-      // Redirect
-      window.location.href = "/app/dashboard";
     } catch (err) {
-      console.error("Login error details:", err.response || err);
+      console.error("Login error details:", err);
 
-      const errorMessage =
+      // Handle axios errors and backend error responses
+      const errorMsg =
+        err.response?.data?.error?.message ||
         err.response?.data?.message ||
-        err.response?.data?.error ||
         err.message ||
         "Login failed. Please try again.";
 
-      setErrorMessage(errorMessage);
+      setErrorMessage(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -120,7 +122,24 @@ function Login() {
               </Link>
             </div>
 
-            <ErrorText styleClass="mt-8">{errorMessage}</ErrorText>
+            {errorMessage && (
+              <div className="alert alert-error mt-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="stroke-current shrink-0 h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>{errorMessage}</span>
+              </div>
+            )}
             <button
               type="submit"
               className={

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "../../../lib/ui/button";
 import {
   Card,
@@ -21,74 +20,77 @@ import {
 } from "../../../lib/ui/table";
 import { Badge } from "../../../lib/ui/badge";
 import { ChevronLeft, Search } from "lucide-react";
-
-// Mock data for feedback
-const mockFeedback = [
-  {
-    id: 1,
-    name: "John Smith",
-    email: "john.smith@example.com",
-    message: "The garbage collection has been very reliable lately. Thank you!",
-    rating: 5,
-    date: "2025-03-15",
-    status: "new",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    email: "sarah.j@example.com",
-    message: "There's a pothole on Main Street that needs attention.",
-    rating: 2,
-    date: "2025-03-14",
-    status: "reviewed",
-  },
-  {
-    id: 3,
-    name: "Michael Chen",
-    email: "m.chen@example.com",
-    message: "The new bus schedule is much more convenient.",
-    rating: 4,
-    date: "2025-03-13",
-    status: "new",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    email: "emily.d@example.com",
-    message: "The community park needs more benches and shade areas.",
-    rating: 3,
-    date: "2025-03-12",
-    status: "reviewed",
-  },
-  {
-    id: 5,
-    name: "Robert Wilson",
-    email: "r.wilson@example.com",
-    message: "We experienced low water pressure last weekend.",
-    rating: 2,
-    date: "2025-03-11",
-    status: "new",
-  },
-];
+import axios from "axios";
+import { showNotification } from "../../common/headerSlice";
+import { useDispatch } from "react-redux";
 
 export default function FeedbackPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [feedback, setFeedback] = useState(mockFeedback);
+  const [feedback, setFeedback] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+
+  // Fetch feedback from backend
+  useEffect(() => {
+    const fetchFeedback = async () => {
+      try {
+        const response = await axios.get("/api/admin/feedback");
+        setFeedback(response.data.data);
+      } catch (error) {
+        console.error("Error fetching feedback:", error);
+        dispatch(
+          showNotification({ message: "Failed to load Feedback", status: 0 })
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeedback();
+  }, []);
 
   const filteredFeedback = feedback.filter(
     (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.message.toLowerCase().includes(searchTerm.toLowerCase())
+      item.citizen?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.feedback_text.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const markAsReviewed = (id) => {
-    setFeedback(
-      feedback.map((item) =>
-        item.id === id ? { ...item, status: "reviewed" } : item
-      )
-    );
+  const markAsReviewed = async (feedbackId) => {
+    try {
+      const response = await axios.put(`/api/admin/${feedbackId}/status`, {
+        status: "Reviewed",
+      });
+
+      setFeedback(
+        feedback.map((item) =>
+          item._id === feedbackId ? response.data.data : item
+        )
+      );
+      dispatch(
+        showNotification({ message: "feedback marked as reviewed", status: 0 })
+      );
+    } catch (error) {
+      console.error("Error updating feedback:", error);
+      dispatch(
+        showNotification({
+          message: "Failed to update feedback status",
+          status: 0,
+        })
+      );
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen w-full flex-col">
+        <main className="flex-1">
+          <div className="container py-6">
+            <p>Loading feedback...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -105,7 +107,7 @@ export default function FeedbackPage() {
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="Search by name, service or content..."
+                    placeholder="Search by name or feedback content..."
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -118,7 +120,6 @@ export default function FeedbackPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Citizen</TableHead>
-
                     <TableHead className="hidden md:table-cell">
                       Feedback
                     </TableHead>
@@ -129,16 +130,15 @@ export default function FeedbackPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredFeedback.map((item) => (
-                    <TableRow key={item.id}>
+                    <TableRow key={item._id}>
                       <TableCell className="font-medium">
-                        {item.name}
+                        {item.citizen?.name || "Unknown"}
                         <div className="text-xs text-muted-foreground">
-                          {item.email}
+                          {item.citizen?.email || "No email"}
                         </div>
                       </TableCell>
-
                       <TableCell className="hidden max-w-[300px] truncate md:table-cell">
-                        {item.message}
+                        {item.feedback_text}
                       </TableCell>
                       <TableCell>
                         <div className="flex">
@@ -159,17 +159,17 @@ export default function FeedbackPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            item.status === "new" ? "default" : "secondary"
+                            item.status === "New" ? "default" : "secondary"
                           }
                         >
-                          {item.status === "new" ? "New" : "Reviewed"}
+                          {item.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.status === "new" ? (
+                        {item.status === "New" ? (
                           <Button
                             size="sm"
-                            onClick={() => markAsReviewed(item.id)}
+                            onClick={() => markAsReviewed(item._id)}
                           >
                             Mark as Reviewed
                           </Button>

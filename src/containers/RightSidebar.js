@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
 import { useDispatch, useSelector } from "react-redux";
 import { closeRightDrawer } from "../features/common/rightDrawerSlice";
-import { RIGHT_DRAWER_TYPES } from "../utils/globalConstantUtil";
 
 function RightSidebar() {
   const { isOpen, header } = useSelector((state) => state.rightDrawer);

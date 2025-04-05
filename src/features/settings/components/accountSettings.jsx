@@ -25,7 +25,7 @@ function ProfileSettings() {
     birthday_date: "",
     current_password: "",
     new_password: "",
-    languagePreference: true, // true for English, false for Arabic
+    languagePreference: "en",
   });
 
   // Fetch admin data on component mount
@@ -44,7 +44,7 @@ function ProfileSettings() {
           birthday_date: adminData.birthday_date?.split("T")[0] || "", // Format date
           current_password: "",
           new_password: "",
-          languagePreference: adminData.languagePreference === "en", // Convert to boolean
+          languagePreference: adminData.languagePreference || "en",
         });
 
         setLoading(false);
@@ -69,7 +69,7 @@ function ProfileSettings() {
         email: formData.email,
         phone_number: formData.phone_number,
         birthday_date: formData.birthday_date,
-        languagePreference: formData.languagePreference ? "en" : "ar",
+        languagePreference: formData.languagePreference,
       };
 
       // Only include password fields if they're not empty
@@ -171,8 +171,13 @@ function ProfileSettings() {
         <ToogleInput
           updateType="languagePreference"
           labelTitle="Language"
-          defaultValue={formData.languagePreference}
-          updateFormValue={updateFormValue}
+          defaultValue={formData.languagePreference === "en"}
+          updateFormValue={({ updateType, value }) => {
+            setFormData({
+              ...formData,
+              [updateType]: value ? "en" : "ar",
+            });
+          }}
           optionLabels={["Arabic", "English"]}
         />
       </div>
