@@ -61,12 +61,33 @@ function Leads() {
         "http://localhost:5000/api/admin/create-citizen",
         citizenData
       );
-      setCitizens([...citizens, response.data]);
+
+      // Reset form data
+      setCitizenData({
+        first_name: "",
+        middle_name: "",
+        last_name: "",
+        national_id: "",
+        email: "",
+        date_of_birth: "",
+        phone_number: "",
+        address: "",
+        gender: "Male",
+        Government: "",
+        marital_status: "Single",
+        password: "",
+      });
+
+      // Update state by fetching fresh data from server
+      const updatedResponse = await axios.get(
+        "http://localhost:5000/api/admin/citizen-list"
+      );
+      setCitizens(updatedResponse.data);
 
       dispatch(
         showNotification({
           message: "Citizen added successfully!",
-          status: 1, // Assuming 1 represents success
+          status: 1,
         })
       );
 

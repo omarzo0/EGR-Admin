@@ -20,12 +20,9 @@ export default function AdminDashboard() {
   const [departmentCount, setDepartmentCount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const statusData = {
-    labels: ["Approved", "Pending", "In Review", "Rejected"],
-    label: "Documents",
-    values: [320, 180, 120, 45],
-  };
+  const [popularServices, setPopularServices] = useState([]);
+  const [loadingCount, setLoadingCount] = useState(true);
+  const [errorCount, setErrorCount] = useState(null);
   useEffect(() => {
     const fetchDepartmentCount = async () => {
       try {
@@ -46,6 +43,40 @@ export default function AdminDashboard() {
 
     fetchDepartmentCount();
   }, []);
+  useEffect(() => {
+    const fetchPopularServices = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/most-services-count"
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch popular services");
+        }
+        const data = await response.json();
+        setPopularServices(data.services.slice(0, 4)); // Take top 4 services
+      } catch (err) {
+        setErrorCount(err.message);
+      } finally {
+        setLoadingCount(false);
+      }
+    };
+
+    fetchPopularServices();
+  }, []);
+  const getRandomPercentageChange = () => {
+    const isPositive = Math.random() > 0.3; // 70% chance of positive
+    const value = Math.floor(Math.random() * 15) + 1; // 1-15%
+    return {
+      value,
+      isPositive,
+    };
+  };
+  const iconColors = [
+    { bg: "bg-blue-100", text: "text-blue-600" },
+    { bg: "bg-purple-100", text: "text-purple-600" },
+    { bg: "bg-orange-100", text: "text-orange-600" },
+    { bg: "bg-green-100", text: "text-green-600" },
+  ];
   const [serviceCount, setServiceCount] = useState(null);
   const [serviceLoading, setServiceLoading] = useState(true);
   const [serviceError, setServiceError] = useState(null);
@@ -315,71 +346,45 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Passport Application</p>
-                    <p className="text-xs text-gray-500">
-                      Immigration & Passports
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center text-green-600">
-                  <ArrowUp className="mr-1 h-4 w-4" />
-                  <span>12%</span>
-                </div>
-              </div>
+              {popularServices.map((service, index) => {
+                const percentage = getRandomPercentageChange();
+                const color = iconColors[index % iconColors.length];
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-purple-100">
-                    <FileText className="h-5 w-5 text-purple-600" />
+                return (
+                  <div
+                    key={service._id}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
+                      <div
+                        className={`mr-4 flex h-9 w-9 items-center justify-center rounded-full ${color.bg}`}
+                      >
+                        <FileText className={`h-5 w-5 ${color.text}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium">{service.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {service.department_id?.name || "General Services"}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`flex items-center ${
+                        percentage.isPositive
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {percentage.isPositive ? (
+                        <ArrowUp className="mr-1 h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="mr-1 h-4 w-4" />
+                      )}
+                      <span>{percentage.value}%</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">National ID Card</p>
-                    <p className="text-xs text-gray-500">National ID</p>
-                  </div>
-                </div>
-                <div className="flex items-center text-green-600">
-                  <ArrowUp className="mr-1 h-4 w-4" />
-                  <span>8%</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-orange-100">
-                    <FileText className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Driver's License</p>
-                    <p className="text-xs text-gray-500">Driver & Vehicle</p>
-                  </div>
-                </div>
-                <div className="flex items-center text-red-600">
-                  <ArrowDown className="mr-1 h-4 w-4" />
-                  <span>3%</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
-                    <FileText className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Birth Certificate</p>
-                    <p className="text-xs text-gray-500">Civil Registry</p>
-                  </div>
-                </div>
-                <div className="flex items-center text-green-600">
-                  <ArrowUp className="mr-1 h-4 w-4" />
-                  <span>5%</span>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
