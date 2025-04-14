@@ -17,7 +17,7 @@ function ProfileSettings() {
     <>
       {/* Tabs */}
       <div className="flex border-b mb-4">
-        {["profile", "notifications", "points", "feedback"].map((tab) => (
+        {["profile", "points", "feedback"].map((tab) => (
           <button
             key={tab}
             className={`px-4 py-2 text-sm font-medium ${

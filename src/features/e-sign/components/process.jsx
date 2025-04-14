@@ -1,16 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-
+import { Link, useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { Button } from "../../../lib/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../../lib/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../lib/ui/tabs";
 import { FileUp, FileDown, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -19,8 +13,33 @@ export default function SignDocument() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [documentStatus, setDocumentStatus] = useState("processing");
+  const [documentStatus, setDocumentStatus] = useState("Pending");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [document, setDocument] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [description, setDescription] = useState("");
+  const [documentUrl, setDocumentUrl] = useState("");
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchDocument = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/admin/signature-list/${id}`
+        );
+        setDocument(response.data.data);
+        setDocumentStatus(response.data.data.status);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchDocument();
+  }, [id]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -29,44 +48,111 @@ export default function SignDocument() {
   };
 
   const handleDownload = () => {
-    // In a real application, this would download the actual document
-    // For this example, we'll just simulate the download
+    if (!document?.uploaded_document_url) return;
+
     const link = document.createElement("a");
-    link.href = document.fileUrl;
-    link.download = `${document.title.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+    link.href = document.uploaded_document_url;
+    link.download = `${document.service_id?.name
+      .replace(/\s+/g, "-")
+      .toLowerCase()}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    // Move to the next tab after download
     setTimeout(() => {
       setActiveTab("upload");
     }, 1000);
   };
 
-  const handleUpload = () => {
-    if (!selectedFile) return;
+  const handleUpload = async () => {
+    if (!selectedFile && !documentUrl) {
+      setError("Please either upload a file or provide a document URL");
+      return;
+    }
 
     setIsUploading(true);
+    setError(null);
 
-    // Simulate upload process
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+
+      // Add either the file or URL (API requires one of these)
+      if (selectedFile) {
+        formData.append("uploaded_document", selectedFile);
+      } else {
+        formData.append("uploaded_document_url", documentUrl);
+      }
+
+      // Add other required fields
+      formData.append("citizen_id", document.citizen_id._id);
+      formData.append("department_id", document.department_id._id);
+      formData.append("service_id", document.service_id._id);
+      formData.append("description", description || "Document signed manually");
+      formData.append("status", "Signed");
+
+      const response = await axios.post(
+        "http://localhost:5000/api/admin/signatures",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
       setIsUploading(false);
       setUploadComplete(true);
-      setDocumentStatus("signed");
+      setDocumentStatus("Signed");
       setActiveTab("status");
-    }, 2000);
+      setDocument(response.data.data);
+    } catch (err) {
+      console.error("Error uploading document:", err);
+      setError(err.response?.data?.message || "Failed to upload document");
+      setIsUploading(false);
+    }
   };
 
-  const handleUpdateStatus = (status) => {
+  const handleUpdateStatus = async (status) => {
     setIsSubmitting(true);
-    setDocumentStatus(status);
+    setError(null);
 
-    // Simulate processing
-    setTimeout(() => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/signature/${id}`,
+        {
+          status,
+          description: description || `Document status updated to ${status}`,
+        }
+      );
+
+      setDocumentStatus(status);
+      setDocument(response.data.data);
+      navigate("/admin/dashboard");
+    } catch (err) {
+      console.error("Error updating status:", err);
+      setError(
+        err.response?.data?.message || "Failed to update document status"
+      );
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p>Loading document...</p>
+      </div>
+    );
+  }
+
+  if (error && !document) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -74,9 +160,16 @@ export default function SignDocument() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Process Document</h2>
           <p className="text-gray-600">
-            {document.title} - Submitted by {document.citizenName}
+            {document?.service_id?.name || "Untitled Document"} - Submitted by{" "}
+            {document?.citizen_id?.email || "Unknown"}
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 rounded-md bg-red-50 p-4 text-red-600">
+            {error}
+          </div>
+        )}
 
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2">
@@ -86,11 +179,17 @@ export default function SignDocument() {
               </CardHeader>
               <CardContent className="relative min-h-[600px]">
                 <div className="relative h-full w-full overflow-auto rounded border bg-white p-4">
-                  <img
-                    src={document.fileUrl || "/placeholder.svg"}
-                    alt="Document Preview"
-                    className="mx-auto block"
-                  />
+                  {document?.uploaded_document_url ? (
+                    <img
+                      src={document.uploaded_document_url}
+                      alt="Document Preview"
+                      className="mx-auto block max-h-[580px]"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-gray-400">
+                      No document preview available
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -107,27 +206,35 @@ export default function SignDocument() {
                     <h3 className="text-sm font-medium text-gray-500">
                       Document Title
                     </h3>
-                    <p>{document.title}</p>
+                    <p>{document?.service_id?.name || "N/A"}</p>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">
                       Citizen
                     </h3>
-                    <p>
-                      {document.citizenName} ({document.citizenId})
-                    </p>
+                    <p>{document?.citizen_id?.email || "N/A"}</p>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">
                       Date Submitted
                     </h3>
-                    <p>{document.dateSubmitted}</p>
+                    <p>
+                      {document?.uploaded_date
+                        ? new Date(document.uploaded_date).toLocaleDateString()
+                        : "N/A"}
+                    </p>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">
                       Department
                     </h3>
-                    <p>{document.department}</p>
+                    <p>{document?.department_id?.name || "N/A"}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">
+                      Current Status
+                    </h3>
+                    <p className="capitalize">{document?.status || "N/A"}</p>
                   </div>
                 </div>
               </CardContent>
@@ -155,10 +262,14 @@ export default function SignDocument() {
                           <li>Download the document</li>
                           <li>Print and sign it manually</li>
                           <li>Scan the signed document</li>
-                          <li>Upload the scanned document</li>
+                          <li>Upload the scanned document or provide URL</li>
                         </ol>
                       </div>
-                      <Button onClick={handleDownload} className="w-full">
+                      <Button
+                        onClick={handleDownload}
+                        className="w-full"
+                        disabled={!document?.uploaded_document_url}
+                      >
                         <FileDown className="mr-2 h-4 w-4" />
                         Download Document
                       </Button>
@@ -214,14 +325,44 @@ export default function SignDocument() {
                           </div>
                         )}
                       </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Or enter document URL
+                        </label>
+                        <input
+                          type="url"
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={documentUrl}
+                          onChange={(e) => setDocumentUrl(e.target.value)}
+                          placeholder="https://example.com/signed-document.pdf"
+                          disabled={!!selectedFile} // Disable URL input if file is selected
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Description
+                        </label>
+                        <textarea
+                          className="w-full rounded-md border p-2 text-sm"
+                          rows={3}
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Enter description for this document"
+                        />
+                      </div>
+
                       <Button
                         onClick={handleUpload}
                         className="w-full"
-                        disabled={!selectedFile || isUploading}
+                        disabled={
+                          (!selectedFile && !documentUrl) || isUploading
+                        }
                       >
                         {isUploading
-                          ? "Uploading..."
-                          : "Upload Signed Document"}
+                          ? "Processing..."
+                          : "Submit Signed Document"}
                       </Button>
                     </div>
                   </TabsContent>
@@ -232,11 +373,11 @@ export default function SignDocument() {
                         <div className="rounded-lg bg-green-50 p-4 text-center">
                           <CheckCircle className="mx-auto h-8 w-8 text-green-500" />
                           <h3 className="mt-2 font-medium text-green-800">
-                            Document Uploaded Successfully
+                            Document Submitted Successfully
                           </h3>
                           <p className="mt-1 text-sm text-green-600">
                             Current status:{" "}
-                            <span className="font-medium">
+                            <span className="font-medium capitalize">
                               {documentStatus}
                             </span>
                           </p>
@@ -245,22 +386,34 @@ export default function SignDocument() {
                         <div className="rounded-lg bg-yellow-50 p-4 text-center">
                           <AlertCircle className="mx-auto h-8 w-8 text-yellow-500" />
                           <h3 className="mt-2 font-medium text-yellow-800">
-                            Upload Required
+                            Submission Required
                           </h3>
                           <p className="mt-1 text-sm text-yellow-600">
-                            Please upload the signed document first
+                            Please submit the signed document first
                           </p>
                         </div>
                       )}
 
                       <div className="space-y-2">
                         <h3 className="font-medium">Update Document Status</h3>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Status Notes
+                          </label>
+                          <textarea
+                            className="w-full rounded-md border p-2 text-sm"
+                            rows={3}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Enter status update description"
+                          />
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             className="border-green-500 text-green-600 hover:bg-green-50"
                             disabled={!uploadComplete || isSubmitting}
-                            onClick={() => handleUpdateStatus("signed")}
+                            onClick={() => handleUpdateStatus("Signed")}
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Approve
@@ -269,7 +422,7 @@ export default function SignDocument() {
                             variant="outline"
                             className="border-red-500 text-red-600 hover:bg-red-50"
                             disabled={isSubmitting}
-                            onClick={() => handleUpdateStatus("rejected")}
+                            onClick={() => handleUpdateStatus("Rejected")}
                           >
                             <AlertCircle className="mr-2 h-4 w-4" />
                             Reject

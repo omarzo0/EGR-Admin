@@ -15,37 +15,8 @@ function Header() {
   const adminId = authState?.adminId || localStorage.getItem("adminId");
 
   // Fetch unread notification count
-  const fetchNotificationCount = async () => {
-    if (!adminId) return;
-    try {
-      const response = await axios.get(`/api/admin/count/${adminId}`);
-      if (response.data?.success) {
-        setNotificationCount(response.data.data.count);
-      }
-    } catch (error) {
-      console.error("Error fetching notification count:", error);
-    }
-  };
-
-  // Mark all notifications as read
-  const markAllAsRead = async () => {
-    if (!adminId) return;
-    try {
-      await axios.put(`/api/admin/notifications/mark-all-read/${adminId}`);
-      setNotificationCount(0);
-    } catch (error) {
-      console.error("Error marking notifications as read:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotificationCount();
-    const interval = setInterval(fetchNotificationCount, 10000);
-    return () => clearInterval(interval);
-  }, [adminId]);
 
   const handleNotificationClick = async () => {
-    await markAllAsRead();
     dispatch(
       openRightDrawer({
         header: "Notifications",
@@ -78,11 +49,6 @@ function Header() {
           onClick={handleNotificationClick}
         >
           <BellIcon className="h-6 w-6" />
-          {notificationCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-              {notificationCount}
-            </span>
-          )}
         </button>
 
         <button

@@ -51,34 +51,9 @@ export default function FeedbackPage() {
 
   const filteredFeedback = feedback.filter(
     (item) =>
-      item.citizen?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.feedback_text.toLowerCase().includes(searchTerm.toLowerCase())
+      item?.citizen?.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+      item?.feedback_text?.toLowerCase().includes(searchTerm?.toLowerCase())
   );
-
-  const markAsReviewed = async (feedbackId) => {
-    try {
-      const response = await axios.put(`/api/admin/${feedbackId}/status`, {
-        status: "Reviewed",
-      });
-
-      setFeedback(
-        feedback.map((item) =>
-          item._id === feedbackId ? response.data.data : item
-        )
-      );
-      dispatch(
-        showNotification({ message: "feedback marked as reviewed", status: 0 })
-      );
-    } catch (error) {
-      console.error("Error updating feedback:", error);
-      dispatch(
-        showNotification({
-          message: "Failed to update feedback status",
-          status: 0,
-        })
-      );
-    }
-  };
 
   if (loading) {
     return (
@@ -125,14 +100,14 @@ export default function FeedbackPage() {
                     </TableHead>
                     <TableHead>Rating</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredFeedback.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium">
-                        {item.citizen?.name || "Unknown"}
+                        {item.citizen?.first_name || "Unknown"}{" "}
+                        {item.citizen?.middle_name || "Unknown"}
                         <div className="text-xs text-muted-foreground">
                           {item.citizen?.email || "No email"}
                         </div>
@@ -164,20 +139,6 @@ export default function FeedbackPage() {
                         >
                           {item.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.status === "New" ? (
-                          <Button
-                            size="sm"
-                            onClick={() => markAsReviewed(item._id)}
-                          >
-                            Mark as Reviewed
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline">
-                            View Details
-                          </Button>
-                        )}
                       </TableCell>
                     </TableRow>
                   ))}

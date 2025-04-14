@@ -67,7 +67,7 @@ const routes = [
     component: Esign,
   },
   {
-    path: "/process",
+    path: "/process/:id",
     component: Process,
   },
   {
@@ -83,7 +83,7 @@ const routes = [
     component: Documents,
   },
   {
-    path: "/details",
+    path: "/details/:id",
     component: Details,
   },
   {

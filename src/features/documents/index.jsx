@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -15,12 +13,12 @@ import { Button } from "../../lib/ui/button";
 import { Input } from "../../lib/ui/input";
 import { Card, CardContent } from "../../lib/ui/card";
 import { Badge } from "../../lib/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../lib/ui/tabs";
 import {
   Select,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectContent,
 } from "../../lib/ui/select";
 import {
   Dialog,
@@ -41,119 +39,198 @@ import {
 import { Label } from "../../lib/ui/label";
 import { Textarea } from "../../lib/ui/textarea";
 import { MoreVertical } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { showNotification } from "../common/headerSlice";
+import { Link } from "react-router-dom";
+
+const API_BASE_URL = "http://localhost:5000/api/admin";
+
 export default function DocumentsPage() {
-  const [citizenIdFilter, setCitizenIdFilter] = useState("");
+  const dispatch = useDispatch();
+  const [searchFilter, setSearchFilter] = useState("");
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [newStatus, setNewStatus] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  // This would come from a database in a real application
-  const documents = [
-    {
-      id: "DOC-12345",
-      type: "Passport",
-      citizenId: "CIT-12345",
-      citizenName: "John Smith",
-      submissionDate: "2025-02-15",
-      expiryDate: "2035-02-15",
-      status: "Approved",
-      department: "Immigration & Passports",
-    },
-    {
-      id: "DOC-23456",
-      type: "Birth Certificate",
-      citizenId: "CIT-23456",
-      citizenName: "Maria Garcia",
-      submissionDate: "2025-02-18",
-      expiryDate: null,
-      status: "Pending",
-      department: "Civil Registry",
-    },
-    {
-      id: "DOC-34567",
-      type: "Driver's License",
-      citizenId: "CIT-34567",
-      citizenName: "David Johnson",
-      submissionDate: "2025-02-20",
-      expiryDate: "2030-02-20",
-      status: "Approved",
-      department: "Driver & Vehicle",
-    },
-    {
-      id: "DOC-45678",
-      type: "National ID Card",
-      citizenId: "CIT-12345",
-      citizenName: "John Smith",
-      submissionDate: "2025-02-22",
-      expiryDate: "2035-02-22",
-      status: "In Review",
-      department: "National ID",
-    },
-    {
-      id: "DOC-56789",
-      type: "Property Title",
-      citizenId: "CIT-56789",
-      citizenName: "Michael Brown",
-      submissionDate: "2025-02-25",
-      expiryDate: null,
-      status: "Rejected",
-      department: "Property & Land",
-    },
-    {
-      id: "DOC-67890",
-      type: "Marriage Certificate",
-      citizenId: "CIT-67890",
-      citizenName: "Emily Wilson",
-      submissionDate: "2025-02-28",
-      expiryDate: null,
-      status: "Approved",
-      department: "Civil Registry",
-    },
-    {
-      id: "DOC-78901",
-      type: "Business Registration",
-      citizenId: "CIT-78901",
-      citizenName: "Robert Taylor",
-      submissionDate: "2025-03-01",
-      expiryDate: "2026-03-01",
-      status: "Pending",
-      department: "Tax & Revenue",
-    },
-    {
-      id: "DOC-89012",
-      type: "Tax Certificate",
-      citizenId: "CIT-12345",
-      citizenName: "John Smith",
-      submissionDate: "2025-03-05",
-      expiryDate: "2026-03-05",
-      status: "In Review",
-      department: "Tax & Revenue",
-    },
-  ];
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/document-list`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch documents");
+        }
+        const data = await response.json();
 
-  // Filter documents by citizen ID if a filter is applied
-  const filteredDocuments = citizenIdFilter
-    ? documents.filter(
-        (doc) =>
-          doc.citizenId.toLowerCase().includes(citizenIdFilter.toLowerCase()) ||
-          doc.citizenName.toLowerCase().includes(citizenIdFilter.toLowerCase())
-      )
-    : documents;
+        // Transform the API data to match our expected format
+        const transformedDocuments = data.data.map((doc) => ({
+          id: doc._id,
+          documentNumber: doc.document_number || doc._id,
+          type: doc.service_id?.name || "Unknown Service",
+          citizenName: doc.citizen_id
+            ? `${doc.citizen_id.first_name} ${doc.citizen_id.last_name}`
+            : `${doc.first_name || ""} ${doc.last_name || ""}`.trim() ||
+              "Unknown Citizen",
+          citizenId: doc.citizen_id?.id_number || doc.id_number || "N/A",
+          submissionDate: doc.application_date || doc.createdAt,
+          status: doc.status,
+          department: doc.department_id?.name || "Unknown Department",
+          amount: doc.amount || 0,
+          currency: doc.currency || "EGP",
+          rejectionReason: doc.rejection_reason,
+          preferredContactMethod: doc.preferred_contact_method,
+        }));
 
-  const handleStatusUpdate = (document, newStatus) => {
-    // In a real application, this would update the database
-    console.log(`Updating document ${document.id} status to ${newStatus}`);
-    setShowStatusDialog(false);
+        setDocuments(transformedDocuments);
+      } catch (err) {
+        setError(err.message);
+        dispatch(
+          showNotification({
+            message: "Failed to fetch documents",
+            status: 0,
+          })
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, [dispatch]);
+
+  const filteredDocuments = documents.filter((doc) => {
+    const matchesSearch =
+      doc.citizenId.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      doc.citizenName.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      doc.documentNumber.toLowerCase().includes(searchFilter.toLowerCase());
+
+    const matchesDepartment =
+      departmentFilter === "all" ||
+      doc.department.toLowerCase().includes(departmentFilter.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      doc.status.toLowerCase() === statusFilter.toLowerCase();
+
+    return matchesSearch && matchesDepartment && matchesStatus;
+  });
+
+  const handleStatusUpdate = async () => {
+    if (!selectedDocument || !newStatus) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/update-document/${selectedDocument.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+            ...(newStatus === "Rejected" && {
+              rejection_reason: rejectionReason,
+            }),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update document status");
+      }
+
+      const updatedDoc = await response.json();
+
+      // Update the local state to reflect the change
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === selectedDocument.id
+            ? { ...doc, status: newStatus, rejectionReason: rejectionReason }
+            : doc
+        )
+      );
+
+      dispatch(
+        showNotification({
+          message: `Document status updated to ${newStatus}`,
+          status: 1,
+        })
+      );
+
+      setShowStatusDialog(false);
+      setNewStatus("");
+      setRejectionReason("");
+    } catch (err) {
+      dispatch(
+        showNotification({
+          message: err.message || "Failed to update document status",
+          status: 0,
+        })
+      );
+    }
   };
 
-  const handleDeleteDocument = (document) => {
-    // In a real application, this would delete from the database
-    console.log(`Deleting document ${document.id}`);
+  const handleDeleteDocument = async (document) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/delete-document/${document.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete document");
+      }
+
+      // Update the local state to remove the deleted document
+      setDocuments((prevDocs) =>
+        prevDocs.filter((doc) => doc.id !== document.id)
+      );
+
+      dispatch(
+        showNotification({
+          message: "Document deleted successfully",
+          status: 1,
+        })
+      );
+    } catch (err) {
+      dispatch(
+        showNotification({
+          message: err.message || "Failed to delete document",
+          status: 0,
+        })
+      );
+    }
   };
 
   const openStatusDialog = (document) => {
     setSelectedDocument(document);
+    setNewStatus(document.status); // Pre-fill with current status
+    setRejectionReason(document.rejectionReason || "");
     setShowStatusDialog(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        Loading documents...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64 text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -171,18 +248,17 @@ export default function DocumentsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
           <Input
-            placeholder="Search by citizen ID or name..."
+            placeholder="Search by document number, citizen ID or name..."
             className="pl-10"
-            value={citizenIdFilter}
-            onChange={(e) => setCitizenIdFilter(e.target.value)}
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
           />
         </div>
         <div className="flex items-center space-x-4">
-          <Select>
+          <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Department" />
             </SelectTrigger>
-
             <SelectItem value="all">All Departments</SelectItem>
             <SelectItem value="civil-registry">Civil Registry</SelectItem>
             <SelectItem value="immigration">Immigration & Passports</SelectItem>
@@ -191,80 +267,36 @@ export default function DocumentsPage() {
             <SelectItem value="tax">Tax & Revenue</SelectItem>
             <SelectItem value="property">Property & Land</SelectItem>
           </Select>
-          <Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="in-review">In Review</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
           </Select>
-          <Button variant="outline" size="icon">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              setSearchFilter("");
+              setDepartmentFilter("all");
+              setStatusFilter("all");
+            }}
+          >
             <Filter className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="all">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">All Documents</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="in-review">In Review</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">
-          <DocumentsTable
-            documents={filteredDocuments}
-            onStatusUpdate={openStatusDialog}
-            onDelete={handleDeleteDocument}
-          />
-        </TabsContent>
-
-        <TabsContent value="approved">
-          <DocumentsTable
-            documents={filteredDocuments.filter(
-              (doc) => doc.status === "Approved"
-            )}
-            onStatusUpdate={openStatusDialog}
-            onDelete={handleDeleteDocument}
-          />
-        </TabsContent>
-
-        <TabsContent value="pending">
-          <DocumentsTable
-            documents={filteredDocuments.filter(
-              (doc) => doc.status === "Pending"
-            )}
-            onStatusUpdate={openStatusDialog}
-            onDelete={handleDeleteDocument}
-          />
-        </TabsContent>
-
-        <TabsContent value="in-review">
-          <DocumentsTable
-            documents={filteredDocuments.filter(
-              (doc) => doc.status === "In Review"
-            )}
-            onStatusUpdate={openStatusDialog}
-            onDelete={handleDeleteDocument}
-          />
-        </TabsContent>
-
-        <TabsContent value="rejected">
-          <DocumentsTable
-            documents={filteredDocuments.filter(
-              (doc) => doc.status === "Rejected"
-            )}
-            onStatusUpdate={openStatusDialog}
-            onDelete={handleDeleteDocument}
-          />
-        </TabsContent>
-      </Tabs>
+      <DocumentsTable
+        documents={filteredDocuments}
+        onStatusUpdate={openStatusDialog}
+        onDelete={handleDeleteDocument}
+      />
 
       {/* Status Update Dialog */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
@@ -272,14 +304,14 @@ export default function DocumentsPage() {
           <DialogHeader>
             <DialogTitle>Update Document Status</DialogTitle>
             <DialogDescription>
-              Change the status for document {selectedDocument?.id}
+              Change the status for document {selectedDocument?.documentNumber}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Document ID:</Label>
               <div className="col-span-3 font-medium">
-                {selectedDocument?.id}
+                {selectedDocument?.documentNumber}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -306,37 +338,52 @@ export default function DocumentsPage() {
               <Label htmlFor="status" className="text-right">
                 New Status:
               </Label>
-              <Select className="col-span-3">
-                <SelectTrigger id="status">
+              <Select
+                value={newStatus}
+                onValueChange={(value) => setNewStatus(value)}
+              >
+                <SelectTrigger className="col-span-3" id="status">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in-review">In Review</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="In Review">In Review</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="notes" className="text-right">
-                Notes:
-              </Label>
-              <Textarea
-                id="notes"
-                placeholder="Add notes about this status change"
-                className="col-span-3"
-              />
-            </div>
+            {newStatus === "Rejected" && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reason" className="text-right">
+                  Rejection Reason:
+                </Label>
+                <Textarea
+                  id="reason"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Enter rejection reason"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowStatusDialog(false)}
+              onClick={() => {
+                setShowStatusDialog(false);
+                setNewStatus("");
+                setRejectionReason("");
+              }}
             >
               Cancel
             </Button>
             <Button
-              onClick={() => handleStatusUpdate(selectedDocument, "Approved")}
+              onClick={handleStatusUpdate}
+              disabled={
+                !newStatus || (newStatus === "Rejected" && !rejectionReason)
+              }
             >
               Update Status
             </Button>
@@ -355,11 +402,11 @@ function DocumentsTable({ documents, onStatusUpdate, onDelete }) {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                <th className="px-6 py-3">Document ID</th>
+                <th className="px-6 py-3">Document Number</th>
                 <th className="px-6 py-3">Type</th>
                 <th className="px-6 py-3">Citizen</th>
                 <th className="px-6 py-3">Submission Date</th>
-                <th className="px-6 py-3">Expiry Date</th>
+                <th className="px-6 py-3">Amount</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3">Department</th>
                 <th className="px-6 py-3">Actions</th>
@@ -377,11 +424,17 @@ function DocumentsTable({ documents, onStatusUpdate, onDelete }) {
                 </tr>
               ) : (
                 documents.map((document) => (
-                  <tr key={document.id} className="hover:bg-gray-50">
+                  <tr
+                    key={document.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() =>
+                      (window.location.href = `/app/details/${document.id}`)
+                    }
+                  >
                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
                       <div className="flex items-center">
                         <File className="mr-2 h-4 w-4 text-gray-400" />
-                        {document.id}
+                        {document.documentNumber}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
@@ -404,9 +457,7 @@ function DocumentsTable({ documents, onStatusUpdate, onDelete }) {
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {document.expiryDate
-                        ? new Date(document.expiryDate).toLocaleDateString()
-                        : "N/A"}
+                      {document.amount} {document.currency}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
                       <Badge className={getStatusBadgeColor(document.status)}>
@@ -416,46 +467,8 @@ function DocumentsTable({ documents, onStatusUpdate, onDelete }) {
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                       {document.department}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <div className="flex space-x-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                            >
-                              <span className="sr-only">Open menu</span>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                (window.location.href = `/app/details`)
-                              }
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              <span>View Details</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => onStatusUpdate(document)}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              <span>Update Status</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-600 focus:bg-red-50 focus:text-red-600"
-                              onClick={() => onDelete(document)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>Delete Document</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      View
                     </td>
                   </tr>
                 ))
@@ -471,6 +484,7 @@ function DocumentsTable({ documents, onStatusUpdate, onDelete }) {
 function getStatusBadgeColor(status) {
   switch (status) {
     case "Approved":
+    case "Completed":
       return "bg-green-100 text-green-800";
     case "Pending":
       return "bg-yellow-100 text-yellow-800";
@@ -482,5 +496,3 @@ function getStatusBadgeColor(status) {
       return "bg-gray-100 text-gray-800";
   }
 }
-
-// Import missing components
