@@ -324,8 +324,8 @@ export default function DocumentDetailPage() {
                     Full Name
                   </h3>
                   <p>
-                    {document.citizen_id.first_name}{" "}
-                    {document.citizen_id.last_name}
+                    {document?.citizen_id?.first_name}{" "}
+                    {document?.citizen_id?.last_name}
                   </p>
                 </div>
                 <div>

@@ -40,8 +40,8 @@ export default function ServicesPage() {
     Description: "",
     departmentName: "",
     fees: 0,
-    points: 0,
     processing_time: "",
+    availableLocations: [{ name: "", address: "", operatingHours: "" }],
   });
 
   const [editingService, setEditingService] = useState(null);
@@ -119,6 +119,7 @@ export default function ServicesPage() {
         fees: Number(newService.fees),
         points: Number(newService.points),
         processing_time: newService.processing_time,
+        availableLocations: newService.availableLocations,
       };
 
       const response = await fetch(
@@ -161,8 +162,8 @@ export default function ServicesPage() {
         Description: editingService.Description,
         departmentName: editingService.departmentName,
         fees: Number(editingService.fees),
-        points: Number(editingService.points),
         processing_time: editingService.processing_time,
+        availableLocations: editingService.availableLocations,
       };
 
       const response = await fetch(
@@ -213,15 +214,16 @@ export default function ServicesPage() {
 
   const handleEditClick = (service) => {
     setEditingService({
-      _id: service._id, // Ensure the ID is included
+      _id: service._id,
       name: service.name,
       Description: service.Description,
-      departmentName: service.department_id?.name, // Use departmentName instead of department_id
+      departmentName: service.department_id?.name,
       fees: service.fees,
-      points: service.points,
+      availableLocations: service.availableLocations,
+
       processing_time: service.processing_time,
     });
-    onHideEdit(); // Open the modal
+    onHideEdit();
   };
   const handleDeleteService = async (serviceId) => {
     try {
@@ -312,7 +314,7 @@ export default function ServicesPage() {
               <SelectValue placeholder="Department" />
             </SelectTrigger>
             <SelectItem value="all">All Departments</SelectItem>
-            {departments.map((department) => (
+            {departments?.map((department) => (
               <SelectItem key={department._id} value={department._id}>
                 {department?.name}
               </SelectItem>
@@ -325,14 +327,12 @@ export default function ServicesPage() {
       </div>
 
       <div className="space-y-4">
-        {filteredServices.map((service) => (
+        {filteredServices?.map((service) => (
           <Card key={service._id}>
             <CardHeader className="p-4 sm:p-6">
               <div className="flex flex-col items-start justify-between space-y-2 sm:flex-row sm:items-center sm:space-y-0">
                 <div className="flex items-center space-x-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    {/* Icon would be dynamically rendered here */}
-                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10"></div>
                   <div>
                     <CardTitle className="text-lg">{service?.name}</CardTitle>
                     <p className="text-sm text-gray-500">
@@ -365,16 +365,45 @@ export default function ServicesPage() {
             <CardContent className="border-t px-4 py-3 sm:px-6">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                 <Badge variant="outline">{service?.department_id?.name}</Badge>
+
                 <div className="flex items-center text-sm text-gray-500">
                   <span className="font-medium">Fee:</span>
                   <span className="ml-1">${service.fees}</span>
                 </div>
+
                 <div className="flex items-center text-sm text-gray-500">
                   <span className="font-medium">Processing Time:</span>
                   <span className="ml-1">{service.processing_time}</span>
                   <Badge variant="outline">{service?.points}</Badge>
                 </div>
               </div>
+
+              {service?.availableLocations?.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-medium text-gray-700">
+                    Available Locations:
+                  </p>
+                  {service?.availableLocations?.map((location, index) => (
+                    <div
+                      key={index}
+                      className="text-sm text-gray-600 pl-2 border-l border-gray-300"
+                    >
+                      <p>
+                        <span className="font-semibold">Name:</span>{" "}
+                        {location.name}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Address:</span>{" "}
+                        {location.address}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Hours:</span>{" "}
+                        {location.operatingHours}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -445,7 +474,7 @@ export default function ServicesPage() {
                         </SelectValue>
                       </SelectTrigger>
 
-                      {departments.map((department) => (
+                      {departments?.map((department) => (
                         <SelectItem
                           key={department._id}
                           value={department?.name}
@@ -470,20 +499,75 @@ export default function ServicesPage() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="points">Points</Label>
-                      <Input
-                        id="points"
-                        placeholder="Enter points"
-                        type="number"
-                        value={newService.points}
-                        onChange={(e) =>
+                    <div className="space-y-4">
+                      <Label>Available Locations</Label>
+                      {newService?.availableLocations?.map(
+                        (location, index) => (
+                          <div
+                            key={index}
+                            className="grid gap-3 sm:grid-cols-3"
+                          >
+                            <Input
+                              placeholder="Name"
+                              value={location.name}
+                              onChange={(e) => {
+                                const updated = [
+                                  ...newService.availableLocations,
+                                ];
+                                updated[index].name = e.target.value;
+                                setNewService({
+                                  ...newService,
+                                  availableLocations: updated,
+                                });
+                              }}
+                            />
+                            <Input
+                              placeholder="Address"
+                              value={location.address}
+                              onChange={(e) => {
+                                const updated = [
+                                  ...newService.availableLocations,
+                                ];
+                                updated[index].address = e.target.value;
+                                setNewService({
+                                  ...newService,
+                                  availableLocations: updated,
+                                });
+                              }}
+                            />
+                            <Input
+                              placeholder="Operating Hours"
+                              value={location.operatingHours}
+                              onChange={(e) => {
+                                const updated = [
+                                  ...newService.availableLocations,
+                                ];
+                                updated[index].operatingHours = e.target.value;
+                                setNewService({
+                                  ...newService,
+                                  availableLocations: updated,
+                                });
+                              }}
+                            />
+                          </div>
+                        )
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
                           setNewService({
                             ...newService,
-                            points: e.target.value,
+                            availableLocations: [
+                              ...newService.availableLocations,
+                              { name: "", address: "", operatingHours: "" },
+                            ],
                           })
                         }
-                      />
+                      >
+                        + Add Another Location
+                      </Button>
                     </div>
 
                     <div className="space-y-2">
@@ -584,7 +668,7 @@ export default function ServicesPage() {
                             "Select department"}
                         </SelectValue>
                       </SelectTrigger>
-                      {departments.map((department) => (
+                      {departments?.map((department) => (
                         <SelectItem
                           key={department._id}
                           value={department?.name}
@@ -611,20 +695,6 @@ export default function ServicesPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="points">Points</Label>
-                      <Input
-                        id="points"
-                        value={editingService?.points || ""}
-                        onChange={(e) =>
-                          setEditingService({
-                            ...editingService,
-                            points: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-
-                    <div className="space-y-2">
                       <Label htmlFor="processingTime">Processing Time</Label>
                       <Input
                         id="processingTime"
@@ -636,6 +706,76 @@ export default function ServicesPage() {
                           })
                         }
                       />
+                    </div>
+                    <div className="space-y-4">
+                      <Label>Available Locations</Label>
+                      {editingService?.availableLocations?.map(
+                        (location, index) => (
+                          <div
+                            key={index}
+                            className="grid gap-3 sm:grid-cols-3"
+                          >
+                            <Input
+                              placeholder="Name"
+                              value={location.name}
+                              onChange={(e) => {
+                                const updated = [
+                                  ...editingService.availableLocations,
+                                ];
+                                updated[index].name = e.target.value;
+                                setEditingService({
+                                  ...editingService,
+                                  availableLocations: updated,
+                                });
+                              }}
+                            />
+                            <Input
+                              placeholder="Address"
+                              value={location.address}
+                              onChange={(e) => {
+                                const updated = [
+                                  ...editingService.availableLocations,
+                                ];
+                                updated[index].address = e.target.value;
+                                setEditingService({
+                                  ...editingService,
+                                  availableLocations: updated,
+                                });
+                              }}
+                            />
+                            <Input
+                              placeholder="Operating Hours"
+                              value={location.operatingHours}
+                              onChange={(e) => {
+                                const updated = [
+                                  ...editingService.availableLocations,
+                                ];
+                                updated[index].operatingHours = e.target.value;
+                                setEditingService({
+                                  ...editingService,
+                                  availableLocations: updated,
+                                });
+                              }}
+                            />
+                          </div>
+                        )
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setEditingService({
+                            ...editingService,
+                            availableLocations: [
+                              ...editingService.availableLocations,
+                              { name: "", address: "", operatingHours: "" },
+                            ],
+                          })
+                        }
+                      >
+                        + Add Another Location
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
