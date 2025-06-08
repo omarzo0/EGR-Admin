@@ -264,8 +264,8 @@ function Leads({ onDelete }) {
         backdrop="opaque"
         className="w-[90%] max-w-[600px] m-auto z-[1000]"
       >
-        <ModalContent>
-          <ModalHeader className="text-lg font-semibold">
+        <ModalContent className="bg-white rounded-lg shadow-2xl">
+          <ModalHeader className="text-lg font-semibold mt-4">
             Add New Admin
           </ModalHeader>
           <ModalBody>
@@ -389,7 +389,7 @@ function Leads({ onDelete }) {
         </ModalContent>
       </Modal>
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)}>
-        <ModalContent>
+        <ModalContent className="bg-white rounded-lg shadow-2xl">
           <ModalHeader>Edit Admin</ModalHeader>
           <ModalBody>
             <input

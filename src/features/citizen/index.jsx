@@ -236,7 +236,7 @@ function Leads() {
         backdrop="opaque"
         className="w-[90%] max-w-[600px] m-auto z-[1000]"
       >
-        <ModalContent>
+        <ModalContent className="bg-white rounded-lg shadow-2xl">
           <ModalHeader className="text-lg font-semibold">
             Add New Citizen
           </ModalHeader>
@@ -368,7 +368,7 @@ function Leads() {
         backdrop="opaque"
         className="w-[90%] max-w-[600px] m-auto z-[1000]"
       >
-        <ModalContent>
+        <ModalContent className="bg-white rounded-lg shadow-2xl">
           <ModalHeader className="text-lg font-semibold">
             Edit Citizen
           </ModalHeader>
