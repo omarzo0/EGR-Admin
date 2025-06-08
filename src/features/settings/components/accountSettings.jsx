@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import TitleCard from "../../../components/Cards/TitleCard";
 import { showNotification } from "../../common/headerSlice";
 import InputText from "../../../components/Input/InputText";
 import TextAreaInput from "../../../components/Input/TextAreaInput";
 import ToogleInput from "../../../components/Input/ToogleInput";
 import axios from "axios";
-import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
+
+import i18n from "i18next"; // Import i18next
+
 function ProfileSettings() {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("profile");
   const { isOpen, header } = useSelector((state) => state.rightDrawer);
-
   const authState = useSelector((state) => state.auth);
-
   const ADMIN_ID = authState?.adminId || localStorage.getItem("adminId");
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -27,6 +28,7 @@ function ProfileSettings() {
     new_password: "",
     languagePreference: "en",
   });
+  const { t } = useTranslation();
 
   // Fetch admin data on component mount
   useEffect(() => {
@@ -104,6 +106,16 @@ function ProfileSettings() {
     });
   };
 
+  // Change language in UI immediately when toggle is clicked
+  const handleLanguageChange = (value) => {
+    const newLanguage = value ? "en" : "ar";
+    i18n.changeLanguage(newLanguage); // Change the language in i18next
+    setFormData({
+      ...formData,
+      languagePreference: newLanguage,
+    });
+  };
+
   if (loading) {
     return <div className="text-center py-10">Loading profile data...</div>;
   }
@@ -173,10 +185,7 @@ function ProfileSettings() {
           labelTitle="Language"
           defaultValue={formData.languagePreference === "en"}
           updateFormValue={({ updateType, value }) => {
-            setFormData({
-              ...formData,
-              [updateType]: value ? "en" : "ar",
-            });
+            handleLanguageChange(value); // Call handle language change
           }}
           optionLabels={["Arabic", "English"]}
         />
@@ -184,7 +193,7 @@ function ProfileSettings() {
 
       <div className="mt-16">
         <button className="btn btn-primary float-right" onClick={updateProfile}>
-          Update
+          {t("Update")}
         </button>
       </div>
     </div>

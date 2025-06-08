@@ -64,7 +64,7 @@ function Leads({ onDelete }) {
       } else {
         dispatch(
           showNotification({
-            message: response.data.message || "Failed to add admin",
+            message: response.data.errors || "Failed to add admin",
             status: 0,
           })
         );
@@ -72,7 +72,7 @@ function Leads({ onDelete }) {
     } catch (error) {
       dispatch(
         showNotification({
-          message: error.response?.data?.message || "Error adding admin",
+          message: error.response?.data?.errors || "Error adding admin",
           status: 0,
         })
       );
@@ -97,7 +97,7 @@ function Leads({ onDelete }) {
       } catch (error) {
         console.error(
           "Error fetching admins:",
-          error.response ? error.response.admins : error.message
+          error.response ? error.response.errors : error.errors
         );
       }
     };
@@ -118,7 +118,7 @@ function Leads({ onDelete }) {
     } catch (error) {
       console.error(
         "Error deleting admin:",
-        error.response?.data?.message || error.message
+        error.response?.data?.errors || error.errors
       );
     }
   };

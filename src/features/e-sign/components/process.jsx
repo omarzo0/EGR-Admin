@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -18,7 +16,7 @@ export default function SignDocument() {
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [description, setDescription] = useState("");
+  const [rejection_reason, setrejection_reason] = useState("");
   const [documentUrl, setDocumentUrl] = useState("");
   const { id } = useParams();
   const navigate = useNavigate();
@@ -47,26 +45,11 @@ export default function SignDocument() {
     }
   };
 
-  const handleDownload = () => {
-    if (!document?.uploaded_document_url) return;
-
-    const link = document.createElement("a");
-    link.href = document.uploaded_document_url;
-    link.download = `${document.service_id?.name
-      .replace(/\s+/g, "-")
-      .toLowerCase()}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setTimeout(() => {
-      setActiveTab("upload");
-    }, 1000);
-  };
-
   const handleUpload = async () => {
     if (!selectedFile && !documentUrl) {
-      setError("Please either upload a file or provide a document URL");
+      setError(
+        "Please either upload a signed document or provide a document URL"
+      );
       return;
     }
 
@@ -76,22 +59,40 @@ export default function SignDocument() {
     try {
       const formData = new FormData();
 
-      // Add either the file or URL (API requires one of these)
       if (selectedFile) {
         formData.append("uploaded_document", selectedFile);
-      } else {
+
+        const base64String = await convertToBase64(selectedFile);
+        formData.append("signature_data", base64String);
+      } else if (documentUrl) {
         formData.append("uploaded_document_url", documentUrl);
+
+        try {
+          const base64FromUrl = await urlToBase64(documentUrl);
+          formData.append("signature_data", base64FromUrl);
+        } catch (err) {
+          console.error("Could not convert URL to base64:", err);
+        }
       }
 
-      // Add other required fields
-      formData.append("citizen_id", document.citizen_id._id);
-      formData.append("department_id", document.department_id._id);
-      formData.append("service_id", document.service_id._id);
-      formData.append("description", description || "Document signed manually");
       formData.append("status", "Signed");
+      formData.append(
+        "rejection_reason",
+        rejection_reason || "Document Signed and uploaded"
+      );
 
-      const response = await axios.post(
-        "http://localhost:5000/api/admin/signatures",
+      if (document?.citizen_id?._id) {
+        formData.append("citizen_id", document.citizen_id._id);
+      }
+      if (document?.department_id?._id) {
+        formData.append("department_id", document.department_id._id);
+      }
+      if (document?.service_id?._id) {
+        formData.append("service_id", document.service_id._id);
+      }
+
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/signature/${id}`,
         formData,
         {
           headers: {
@@ -106,13 +107,44 @@ export default function SignDocument() {
       setActiveTab("status");
       setDocument(response.data.data);
     } catch (err) {
-      console.error("Error uploading document:", err);
-      setError(err.response?.data?.message || "Failed to upload document");
       setIsUploading(false);
+      setError(
+        err.response?.data?.message || "Failed to upload signed document"
+      );
+      console.error("Upload error:", err.response?.data || err.message);
     }
   };
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result;
+        resolve(result.includes(",") ? result.split(",")[1] : result);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
-  const handleUpdateStatus = async (status) => {
+  const urlToBase64 = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result;
+          resolve(result.includes(",") ? result.split(",")[1] : result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error converting URL to base64:", error);
+      throw error;
+    }
+  };
+  const handleStatusUpdate = async (newStatus) => {
     setIsSubmitting(true);
     setError(null);
 
@@ -120,24 +152,19 @@ export default function SignDocument() {
       const response = await axios.put(
         `http://localhost:5000/api/admin/signature/${id}`,
         {
-          status,
-          description: description || `Document status updated to ${status}`,
+          status: newStatus,
+          description: rejection_reason || `Status changed to ${newStatus}`,
         }
       );
 
-      setDocumentStatus(status);
+      setDocumentStatus(newStatus);
       setDocument(response.data.data);
-      navigate("/admin/dashboard");
-    } catch (err) {
-      console.error("Error updating status:", err);
-      setError(
-        err.response?.data?.message || "Failed to update document status"
-      );
-    } finally {
       setIsSubmitting(false);
+    } catch (err) {
+      setIsSubmitting(false);
+      setError(err.response?.data?.message || "Failed to update status");
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -266,12 +293,17 @@ export default function SignDocument() {
                         </ol>
                       </div>
                       <Button
-                        onClick={handleDownload}
-                        className="w-full"
-                        disabled={!document?.uploaded_document_url}
+                        variant="contained"
+                        size="small"
+                        component="a"
+                        href={`http://localhost:5000/api/admin/esignature_download/${document._id}?download=true`}
+                        download
+                        sx={{
+                          backgroundColor: "black",
+                          "&:hover": { backgroundColor: "#333" },
+                        }}
                       >
-                        <FileDown className="mr-2 h-4 w-4" />
-                        Download Document
+                        Download
                       </Button>
                     </div>
                   </TabsContent>
@@ -326,33 +358,6 @@ export default function SignDocument() {
                         )}
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">
-                          Or enter document URL
-                        </label>
-                        <input
-                          type="url"
-                          className="w-full rounded-md border p-2 text-sm"
-                          value={documentUrl}
-                          onChange={(e) => setDocumentUrl(e.target.value)}
-                          placeholder="https://example.com/signed-document.pdf"
-                          disabled={!!selectedFile} // Disable URL input if file is selected
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">
-                          Description
-                        </label>
-                        <textarea
-                          className="w-full rounded-md border p-2 text-sm"
-                          rows={3}
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Enter description for this document"
-                        />
-                      </div>
-
                       <Button
                         onClick={handleUpload}
                         className="w-full"
@@ -403,8 +408,10 @@ export default function SignDocument() {
                           <textarea
                             className="w-full rounded-md border p-2 text-sm"
                             rows={3}
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            value={rejection_reason}
+                            onChange={(e) =>
+                              setrejection_reason(e.target.value)
+                            }
                             placeholder="Enter status update description"
                           />
                         </div>
@@ -412,8 +419,8 @@ export default function SignDocument() {
                           <Button
                             variant="outline"
                             className="border-green-500 text-green-600 hover:bg-green-50"
-                            disabled={!uploadComplete || isSubmitting}
-                            onClick={() => handleUpdateStatus("Signed")}
+                            onClick={handleUpload}
+                            disabled={isUploading}
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Approve
@@ -421,8 +428,8 @@ export default function SignDocument() {
                           <Button
                             variant="outline"
                             className="border-red-500 text-red-600 hover:bg-red-50"
+                            onClick={() => handleStatusUpdate("Rejected")}
                             disabled={isSubmitting}
-                            onClick={() => handleUpdateStatus("Rejected")}
                           >
                             <AlertCircle className="mr-2 h-4 w-4" />
                             Reject
