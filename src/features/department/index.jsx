@@ -278,7 +278,7 @@ export default function DepartmentsPage() {
         backdrop="blur"
         className="w-[90%] max-w-[600px] m-auto"
       >
-        <ModalContent>
+        <ModalContent className="bg-white rounded-lg shadow-2xl">
           <ModalHeader className="text-lg font-semibold">
             Add New Department
           </ModalHeader>
@@ -333,7 +333,7 @@ export default function DepartmentsPage() {
         aria-labelledby="modal-title"
         className="w-[90%] max-w-[600px] m-auto"
       >
-        <ModalContent>
+        <ModalContent className="bg-white rounded-lg shadow-2xl">
           <ModalHeader className="text-lg font-semibold" id="modal-title">
             Edit Department
           </ModalHeader>

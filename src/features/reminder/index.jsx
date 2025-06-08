@@ -264,7 +264,7 @@ export function Reminder() {
               Sort by Date
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="bg-white rounded-lg shadow-2xl">
             <DropdownMenuItem onClick={() => setSortOrder("asc")}>
               <SortAsc className="mr-2 h-4 w-4" />
               Earliest First
