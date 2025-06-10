@@ -160,7 +160,7 @@ export default function DocumentDetailPage() {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{document.service_id.name}</h1>
+            <h1 className="text-2xl font-bold">{document?.service_id?.name}</h1>
             <p className="text-gray-500">
               Document ID: {document.document_number}
             </p>
@@ -254,7 +254,7 @@ export default function DocumentDetailPage() {
                   <h3 className="text-sm font-medium text-gray-500">
                     Service Name
                   </h3>
-                  <p>{document.service_id.name}</p>
+                  <p>{document?.service_id?.name}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">
@@ -266,7 +266,7 @@ export default function DocumentDetailPage() {
                   <h3 className="text-sm font-medium text-gray-500">
                     Department
                   </h3>
-                  <p>{document.department_id.name}</p>
+                  <p>{document?.department_id?.name}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Status</h3>
@@ -378,7 +378,7 @@ export default function DocumentDetailPage() {
                       </div>
 
                       <p className="text-sm text-gray-700">
-                        {document.service_id.name}
+                        {document?.service_id?.name}
                       </p>
 
                       {document.status === "rejected" &&

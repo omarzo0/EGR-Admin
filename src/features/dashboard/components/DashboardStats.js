@@ -169,7 +169,13 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Dashboard Overview</h1>
-
+      <a
+        href="https://charts.mongodb.com/charts-project-0-syxgoik/dashboards/acd7ea20-5e0b-4d76-a3e8-567fc8ded4e3"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View System Analytics Dashboard
+      </a>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -255,7 +261,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
-
       <div className="mt-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Analytics Overview</h2>
@@ -279,7 +284,6 @@ export default function AdminDashboard() {
           />
         </div>
       </div>
-
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>

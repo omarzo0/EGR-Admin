@@ -404,6 +404,7 @@ function DocumentsTable({ documents, onStatusUpdate, onDelete }) {
               <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 <th className="px-6 py-3">Document Number</th>
                 <th className="px-6 py-3">Type</th>
+                <th className="px-6 py-3">App Type</th>
                 <th className="px-6 py-3">Citizen</th>
                 <th className="px-6 py-3">Submission Date</th>
                 <th className="px-6 py-3">Amount</th>
@@ -439,6 +440,9 @@ function DocumentsTable({ documents, onStatusUpdate, onDelete }) {
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                       {document.type}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      {document.application_type}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
                       <div className="flex flex-col">
