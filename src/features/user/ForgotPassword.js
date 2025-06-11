@@ -87,19 +87,19 @@ function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 relative overflow-hidden">
       {/* Decorative Blobs */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ duration: 2 }}
-        className="absolute w-96 h-96 bg-pink-300 opacity-30 rounded-full -top-20 -left-20 blur-3xl"
+        className="absolute w-96 h-96 opacity-40 rounded-full -top-20 -left-20 blur-3xl"
       />
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.3, duration: 2 }}
-        className="absolute w-80 h-80 bg-blue-300 opacity-30 rounded-full -bottom-20 -right-20 blur-3xl"
+        className="absolute w-80 h-80 opacity-40 rounded-full -bottom-20 -right-20 blur-3xl"
       />
 
       {/* Main Card Container */}
@@ -125,7 +125,7 @@ function ForgotPassword() {
             <div className="text-center mt-4">
               <Link to="/login">
                 <button
-                  className="w-full py-3 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-500 to-pink-500 shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-pink-600"
+                  className="w-full py-3 rounded-lg text-white font-semibold bg-black hover:bg-gray-800 transition-all duration-300 shadow-md"
                 >
                   Back to Login
                 </button>
@@ -170,7 +170,7 @@ function ForgotPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-500 to-pink-500 shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-pink-600 ${
+                className={`w-full py-3 rounded-lg text-white font-semibold bg-black hover:bg-gray-800 transition-all duration-300 shadow-md ${
                   loading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
@@ -207,7 +207,7 @@ function ForgotPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-500 to-pink-500 shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-pink-600 ${
+                className={`w-full py-3 rounded-lg text-white font-semibold bg-black hover:bg-gray-800 transition-all duration-300 shadow-md ${
                   loading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
