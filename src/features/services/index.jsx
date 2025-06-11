@@ -426,7 +426,7 @@ export default function ServicesPage() {
         <ModalContent>
           <ModalBody>
             <div>
-              <Card className="mx-auto max-w-2xl">
+              <Card className="mx-auto max-w-2xl bg-white">
                 <CardHeader>
                   <CardTitle>Service Information</CardTitle>
                   <CardDescription>
@@ -638,7 +638,7 @@ export default function ServicesPage() {
                 <h1 className="text-2xl font-bold">Edit Service</h1>
               </div>
 
-              <Card className="mx-auto max-w-2xl">
+              <Card className="mx-auto max-w-2xl bg-white">
                 <CardHeader>
                   <CardTitle>Service Information</CardTitle>
                   <CardDescription>

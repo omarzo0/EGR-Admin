@@ -69,20 +69,19 @@ function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 flex items-center justify-center px-4 relative overflow-hidden">
-
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 relative overflow-hidden">
       {/* Decorative Blobs */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ duration: 2 }}
-        className="absolute w-96 h-96 bg-pink-300 opacity-30 rounded-full -top-20 -left-20 blur-3xl"
+        className="absolute w-96 h-96 opacity-40 rounded-full -top-20 -left-20 blur-3xl"
       />
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.3, duration: 2 }}
-        className="absolute w-80 h-80 bg-blue-300 opacity-30 rounded-full -bottom-20 -right-20 blur-3xl"
+        className="absolute w-80 h-80 opacity-40 rounded-full -bottom-20 -right-20 blur-3xl"
       />
 
       <motion.div
@@ -97,7 +96,6 @@ function AdminLogin() {
         <p className="text-sm text-gray-600 text-center mb-6">
           Enter your credentials to access the dashboard.
         </p>
-
         <form onSubmit={submitForm} className="space-y-6">
           <InputText
             type="email"
@@ -129,18 +127,11 @@ function AdminLogin() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="submit"
-            className="w-full py-3 rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-md"
+            className="w-full py-3 rounded-xl text-white bg-black hover:bg-gray-800 transition-all duration-300 shadow-md"
             disabled={loading}
           >
             {loading ? "Logging in..." : "Login"}
           </motion.button>
-
-          <div className="text-center text-sm text-gray-600 mt-4">
-            Not an admin?{" "}
-            <Link to="/register" className="underline text-blue-600 hover:text-blue-800">
-              Register
-            </Link>
-          </div>
         </form>
       </motion.div>
     </div>
