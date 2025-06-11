@@ -42,6 +42,7 @@ export default function ServicesPage() {
     fees: 0,
     processing_time: "",
     availableLocations: [{ name: "", address: "", operatingHours: "" }],
+    serviceType: "",
   });
 
   const [editingService, setEditingService] = useState(null);
@@ -120,6 +121,7 @@ export default function ServicesPage() {
         points: Number(newService.points),
         processing_time: newService.processing_time,
         availableLocations: newService.availableLocations,
+        serviceType: newService.serviceType,
       };
 
       const response = await fetch(
@@ -146,6 +148,7 @@ export default function ServicesPage() {
           fees: 0,
           points: 0,
           processing_time: "",
+          serviceType: "",
         });
       } else {
         console.error("Failed to create service");
@@ -164,6 +167,7 @@ export default function ServicesPage() {
         fees: Number(editingService.fees),
         processing_time: editingService.processing_time,
         availableLocations: editingService.availableLocations,
+        serviceType: editingService.serviceType,
       };
 
       const response = await fetch(
@@ -222,6 +226,7 @@ export default function ServicesPage() {
       availableLocations: service.availableLocations,
 
       processing_time: service.processing_time,
+      serviceType: service.serviceType,
     });
     onHideEdit();
   };
@@ -374,6 +379,7 @@ export default function ServicesPage() {
                 <div className="flex items-center text-sm text-gray-500">
                   <span className="font-medium">Processing Time:</span>
                   <span className="ml-1">{service.processing_time}</span>
+
                   <Badge variant="outline">{service?.points}</Badge>
                 </div>
               </div>
@@ -402,6 +408,7 @@ export default function ServicesPage() {
                       </p>
                     </div>
                   ))}
+                  <span className="ml-1">{service.serviceType}</span>
                 </div>
               )}
             </CardContent>
@@ -583,6 +590,25 @@ export default function ServicesPage() {
                           })
                         }
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="serviceType">Service Type</Label>
+                      <Select
+                        id="serviceType"
+                        value={newService.serviceType}
+                        onChange={(e) =>
+                          setNewService({
+                            ...newService,
+                            serviceType: e.target.value,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select service type" />
+                        </SelectTrigger>
+                        <SelectItem value="esignature">eSignature</SelectItem>
+                        <SelectItem value="application">application</SelectItem>
+                      </Select>
                     </div>
                   </div>
                 </CardContent>
@@ -776,6 +802,26 @@ export default function ServicesPage() {
                       >
                         + Add Another Location
                       </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="serviceType">Service Type</Label>
+                      <Select
+                        id="serviceType"
+                        value={editingService?.serviceType || ""}
+                        onChange={(e) =>
+                          setEditingService({
+                            ...editingService,
+                            serviceType: e.target.value,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select service type" />
+                        </SelectTrigger>
+                        <SelectItem value="esignature">eSignature</SelectItem>
+                        <SelectItem value="application">application</SelectItem>
+                        {/* Add more service types as needed */}
+                      </Select>
                     </div>
                   </div>
                 </CardContent>

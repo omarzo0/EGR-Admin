@@ -46,10 +46,8 @@ export default function SignDocument() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile && !documentUrl) {
-      setError(
-        "Please either upload a signed document or provide a document URL"
-      );
+    if (!documentUrl) {
+      setError("Please provide a document URL");
       return;
     }
 
@@ -57,49 +55,38 @@ export default function SignDocument() {
     setError(null);
 
     try {
-      const formData = new FormData();
+      const payload = {
+        uploaded_document_url: documentUrl,
+        status: "Signed",
+        rejection_reason: rejection_reason || "Document signed and approved",
+      };
 
-      if (selectedFile) {
-        formData.append("uploaded_document", selectedFile);
-
-        const base64String = await convertToBase64(selectedFile);
-        formData.append("signature_data", base64String);
-      } else if (documentUrl) {
-        formData.append("uploaded_document_url", documentUrl);
-
-        try {
-          const base64FromUrl = await urlToBase64(documentUrl);
-          formData.append("signature_data", base64FromUrl);
-        } catch (err) {
-          console.error("Could not convert URL to base64:", err);
-        }
-      }
-
-      formData.append("status", "Signed");
-      formData.append(
-        "rejection_reason",
-        rejection_reason || "Document Signed and uploaded"
-      );
-
+      // Add related IDs if they exist
       if (document?.citizen_id?._id) {
-        formData.append("citizen_id", document.citizen_id._id);
+        payload.citizen_id = document.citizen_id._id;
       }
       if (document?.department_id?._id) {
-        formData.append("department_id", document.department_id._id);
+        payload.department_id = document.department_id._id;
       }
       if (document?.service_id?._id) {
-        formData.append("service_id", document.service_id._id);
+        payload.service_id = document.service_id._id;
       }
+
+      console.log("Sending payload:", payload);
 
       const response = await axios.put(
         `http://localhost:5000/api/admin/signature/${id}`,
-        formData,
+        payload,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         }
       );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Upload failed");
+      }
 
       setIsUploading(false);
       setUploadComplete(true);
@@ -109,41 +96,14 @@ export default function SignDocument() {
     } catch (err) {
       setIsUploading(false);
       setError(
-        err.response?.data?.message || "Failed to upload signed document"
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to upload document"
       );
-      console.error("Upload error:", err.response?.data || err.message);
+      console.error("Upload error:", err);
     }
-  };
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result;
-        resolve(result.includes(",") ? result.split(",")[1] : result);
-      };
-      reader.onerror = (error) => reject(error);
-    });
   };
 
-  const urlToBase64 = async (url) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result;
-          resolve(result.includes(",") ? result.split(",")[1] : result);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (error) {
-      console.error("Error converting URL to base64:", error);
-      throw error;
-    }
-  };
   const handleStatusUpdate = async (newStatus) => {
     setIsSubmitting(true);
     setError(null);
